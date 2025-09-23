@@ -11,7 +11,8 @@ export default function LoginPage() {
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
-    const res = await fetch('http://localhost:4000/api/auth/login', {
+    const res = await fetch('http://127.0.0.1:4000/api/auth/login', {
+      mode: 'cors',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
     if (res.ok) {
       setToken(data.token);
-      router.push('/dashboard');
+      router.push('/reports');
     } else {
       alert(data.error || 'Login failed');
     }

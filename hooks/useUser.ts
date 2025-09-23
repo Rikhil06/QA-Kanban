@@ -13,7 +13,7 @@ export const useUser = () => {
       return;
     }
 
-    fetch('http://localhost:4000/api/auth/me', {
+    fetch('http://127.0.0.1:4000/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.ok ? res.json() : null)

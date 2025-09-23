@@ -30,7 +30,7 @@ export default function RootLayout({
         <div className='flex h-full'>
           <Sidebar />
           <Topnav />
-          <main className="w-10/12 left-2/12 top-[88px] relative">
+          <main className="w-10/12 left-2/12 top-[120px] relative">
           {children}
           </main>
         </div>

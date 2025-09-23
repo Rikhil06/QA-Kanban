@@ -6,7 +6,7 @@ import { formatTimeAgo } from '@/utils/formatTimeAgo';
 import Link from 'next/link';
 import slugify from 'slugify';
 import { getToken } from '@/lib/auth';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 
 import { BsThreeDotsVertical } from "react-icons/bs";
 
@@ -16,23 +16,27 @@ type Site = {
   siteName: string;
   count: number;
   lastUpdated: string | Date;
+  archivedAt: string | Date;
 };
 
 const token = getToken();
 
-if (!token) {
-  // router.push('/login'); // or show login modal
-}
-
-export default function SiteList() {
+export default function ArchivedSiteList() {
+  const router = useRouter();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [archiveDropdownOpen, setArchiveDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
+
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     const fetchSites = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:4000/api/sites', {
+        const res = await fetch('http://127.0.0.1:4000/api/archive', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -65,6 +69,7 @@ export default function SiteList() {
       const { error } = await res.json();
       throw new Error(error);
     }
+
     setSites((prevSites) => prevSites.filter((site) => slugify(site.siteName, {lower: true}) !== id));
     setArchiveDropdownOpen(false);
     return res.json(); // optional, to show a toast or reload data
@@ -99,14 +104,14 @@ export default function SiteList() {
         </Link>
         <div className='flex items-center gap-5'>
           <div className="text-sm text-white bg-purple-600 px-3 py-1 rounded-full">
-              Last updated: {formatTimeAgo(site.lastUpdated)}
+              Last updated: {formatTimeAgo(site.archivedAt)}
           </div>
           <button className='cursor-pointer relative' onClick={() => setArchiveDropdownOpen(true)}>
             <BsThreeDotsVertical />
             {archiveDropdownOpen && (
               <div className='absolute -right-[15px] top-[55px] bg-white shadow-sm flex flex-col rounded-lg items-start'>
-                <button className='flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer hover:bg-gray-200 text-left whitespace-nowrap w-full' onClick={() => toggleSiteArchive(slugify(site.siteName, {lower: true}), true)}>
-                  Archive site
+                <button className='flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer hover:bg-gray-200 text-left whitespace-nowrap w-full' onClick={() => toggleSiteArchive(slugify(site.siteName, {lower: true}), false)}>
+                  Unarchive site
                 </button>
               </div>
             )}

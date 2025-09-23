@@ -22,10 +22,6 @@ export default function Sidebar() {
             <LuLayoutDashboard />
             <p className='text-md'>Home</p>
         </Link>
-        <Link className={`flex items-center gap-3 w-full p-3 ${pathname == '/dashboard' ? 'bg-gray-200 rounded-xl' : ''}`} href='/dashboard'>
-            <LuLayoutDashboard />
-            <p className='text-md'>Dashboard</p>
-        </Link>
         <Link className={`flex items-center gap-3 w-full p-3 ${pathname.includes('reports') ? 'bg-gray-200 rounded-xl' : ''}`} href='/reports'>
             <TbMessageReport />
             <p className='text-md'>Reports</p>

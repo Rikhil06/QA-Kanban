@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Report, ColumnId } from '@/types/types';
 // import Image from 'next/image';
@@ -18,17 +18,33 @@ import { IoCode } from "react-icons/io5";
 import { GoCommentDiscussion } from "react-icons/go";
 import { RiAttachment2 } from "react-icons/ri";
 import { RxDividerVertical } from "react-icons/rx";
+import { getToken } from '@/lib/auth';
 
 export default function SiteReportsPage() {
+  const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const token = getToken();
   const slug = params?.slug as string;
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [commentsByReportId, setCommentsByReportId] = useState<Record<string, Comment[]>>({});
+  const reportIdParams = new URLSearchParams(searchParams.toString());
+
+  useEffect(() => {
+    const reportIdFromUrl = searchParams.get('report');
+    if (reportIdFromUrl) {
+      setSelectedId(reportIdFromUrl);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (slug) {
-      fetch(`http://localhost:4000/api/site/${slug}`)
+      fetch(`http://127.0.0.1:4000/api/site/${slug}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then(res => res.json())
         .then(async (data: Report[]) => {
           setReports(data);
@@ -38,7 +54,7 @@ export default function SiteReportsPage() {
           // Fetch comments for each report
           await Promise.all(
             data.map(async (report) => {
-              const res = await fetch(`http://localhost:4000/api/reports/${report.id}/comments`);
+              const res = await fetch(`http://127.0.0.1:4000/api/reports/${report.id}/comments`);
               const comments = await res.json();
               commentsMap[report.id] = comments;
             })
@@ -48,6 +64,7 @@ export default function SiteReportsPage() {
         });
     }
   }, [slug]);
+
 
   const handleReportDeleted = (deletedId: string) => {
     setReports(prev => prev.filter(report => report.id !== deletedId));
@@ -124,6 +141,8 @@ export default function SiteReportsPage() {
     });
   }, [reports]);
 
+  // console.log(reports);
+
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
@@ -149,6 +168,18 @@ export default function SiteReportsPage() {
       [destination.droppableId]: { ...destCol, items: newDestItems },
     });
   };
+
+  const openModal = (id: string) => {
+    setSelectedId(id);
+    reportIdParams.set('report', id);
+    router.push(`?${reportIdParams.toString()}`);
+  }
+
+  const closeModal = () => {
+    setSelectedId(null);
+    reportIdParams.delete('report');
+    router.push(`?${reportIdParams.toString()}`);
+  }
 
   return (
     <>
@@ -195,22 +226,14 @@ export default function SiteReportsPage() {
                           style={{
                             ...provided.draggableProps.style,
                           }}
-                          onClick={() => setSelectedId(item.id)}
+                          onClick={() => openModal(item.id)}
                         >
                           <p className='text-black text-sm font-bold'>{item.comment}</p>
                           {/* Authors */}
                           <div className='flex flex-wrap gap-2'>
                             <Avatar 
-                              initial='R'
-                              name="Rikhil Makwana"
-                            />
-                            <Avatar 
-                              initial='A'
-                              name="Ankita Patel"
-                            />
-                            <Avatar 
-                              initial='R'
-                              name="Rikhil Makwana"
+                              initial={item.userName.charAt(0)}
+                              name={item.userName}
                             />
                           </div>
 
@@ -270,7 +293,19 @@ export default function SiteReportsPage() {
           ))}
         </DragDropContext>
 
-        {selectedId && <ReportModal id={selectedId} onClose={() => setSelectedId(null)} onDeleteSuccess={handleReportDeleted} />}
+        {selectedId && 
+          <ReportModal 
+            id={selectedId} 
+            onClose={() => closeModal()} 
+            onDeleteSuccess={handleReportDeleted}
+            onMoveSuccess={(updatedId: string, newStatus: ColumnId) => {
+              setReports((prev) => 
+                prev.map((r) => r.id === updatedId ? { ...r, status: newStatus } : r)
+              );
+              setSelectedId(null);
+            }}
+          />
+        }
       </div>
     </>
   );

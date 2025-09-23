@@ -26,6 +26,8 @@ const KanbanBoard: React.FC<KanbanProps> = ({ reports }) => {
 
   const [columns, setColumns] = useState(initialColumns);
 
+  console.log(initialColumns);
+
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;

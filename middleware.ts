@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 export function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value || req.headers.get('authorization')?.split(' ')[1];
 
-  const protectedPaths = ['/reports'];
+  const protectedPaths = ['/settings'];
   const url = req.nextUrl.clone();
 
   if (protectedPaths.includes(url.pathname) && !token) {
@@ -17,5 +17,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/reports'],
+  matcher: ['/settings'],
 };

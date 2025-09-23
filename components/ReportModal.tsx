@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Report, ReportModalProps } from '@/types/types';
-import { Comment } from '@/types/types';
+import { ColumnId, Report, ReportModalProps } from '@/types/types';
+import { Comment, Site } from '@/types/types';
 import { ToastContainer, toast } from 'react-toastify';
 import Avatar from './cards/Avatar';
 import Zoom from 'react-medium-image-zoom'
@@ -23,9 +23,14 @@ import { GrStatusPlaceholder } from "react-icons/gr";
 import { GoIssueTrackedBy } from "react-icons/go";
 import { IoDocumentAttachOutline } from "react-icons/io5";
 import { MdOutlineDescription, MdOutlineEmojiEmotions, MdOutlineKeyboardVoice, MdSend } from 'react-icons/md';
+import { useParams, usePathname } from 'next/navigation';
 
 
-export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModalProps) {
+export default function ReportModal({ id, onClose, onDeleteSuccess, onMoveSuccess }: ReportModalProps) {
+    const { slug } = useParams();
+      const pathname = usePathname();
+
+    const [copied, setCopied] = useState(false);
     const [report, setReport] = useState<Report | null>(null);
     const [openMore, setOpenMore] = useState<boolean>(false);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -35,13 +40,17 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
     const [status, setStatus] = useState<string>('');
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [reportIdToDelete, setReportIdToDelete] = useState<string | null>(null);
+    const [openMoveToSubmenu, setOpenMoveToSubmenu] = useState<boolean>(false);
+    const [openStatusSubmenu, setOpenStatusSubmenu] = useState<boolean>(false);
+    const [openAssigneeSubmenu, setOpenAssigneeSubmenu] = useState<boolean>(false);
+    const [users, setUsers] = useState<Site[]>([]);
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
   
     useEffect(() => {
       const fetchReport = async () => {
-        const res = await fetch(`http://localhost:4000/uploads/${id}.json`);
+        const res = await fetch(`http://127.0.0.1:4000/uploads/${id}.json`);
         if (!res.ok) return;
         const data = await res.json();
         setReport(data);
@@ -50,7 +59,7 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
       fetchReport();
 
       const fetchComments = async () => {
-        const res = await fetch(`http://localhost:4000/api/reports/${id}/comments`);
+        const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`);
         if (!res.ok) return;
         const data = await res.json();
         setComments(data);
@@ -58,13 +67,35 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
       fetchComments();
 
       const fetchStatus= async () => {
-        const res = await fetch(`http://localhost:4000/api/report/${id}/status`);
+        const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`);
         if (!res.ok) return;
         const data = await res.json();
         setStatus(data.status);
       };
       fetchStatus();
+      
     }, [id]);
+
+    useEffect(() => {
+      const siteId = pathname?.split("/").pop();
+  
+      if (!siteId) return;
+  
+      const fetchUsers = async () => {
+        try {
+          const res = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/users`);
+          if (!res.ok) return;
+          const data = await res.json();
+          setUsers(data);
+        } catch (error) {
+          console.error("Error fetching users:", error);
+        }
+      };
+  
+      fetchUsers();
+    }, [pathname]);
+
+    console.log(users);
 
     // Close when clicking outside
     useEffect(() => {
@@ -80,6 +111,19 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
       };
     }, []);
 
+    useEffect(() => {
+      const handleEscKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          onClose();
+        }
+      };
+    
+      document.addEventListener('keydown', handleEscKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscKey);
+      };
+    }, [onClose]);
+
     const handleAddComment = async () => {
       if (newComment.trim().length === 0) return;
     
@@ -91,7 +135,7 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
           attachments: [...fileNames],
         };
 
-        const res = await fetch(`http://localhost:4000/api/reports/${id}/comments`, {
+        const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`, {
           
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -147,12 +191,42 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
         console.error('Failed to delete report:', error);
         alert('Something went wrong while deleting the report.');
       }
-    };    
+    };
     
     const handleNo = () => {
       setIsAlertOpen(false);
       setReportIdToDelete(null);
     };    
+
+    const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
+      try {
+        const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+    
+        if (!res.ok) throw new Error('Failed to move report');
+    
+        const updated = await res.json();
+        setStatus(updated.status);
+        toast.success(`Moved to ${Capitalize(updated.status)}!`);
+
+        if (onMoveSuccess) {
+          onMoveSuccess(id, newStatus);
+        }
+
+        console.log(shouldClose);
+
+        if (shouldClose) {
+          onClose();
+        }
+
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to move report");
+      }
+    };
 
     function renderComments(commentsList: Comment[], parentId: string | null = null) {
       return commentsList
@@ -205,6 +279,17 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
   
       inputRef.current.click();
     }
+
+    const handleCopyLink = async () => {
+      const reportUrl = `${window.location.origin}/reports/${slug}?report=${id}`;
+      try {
+        await navigator.clipboard.writeText(reportUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); // Reset after 2s
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    };
   
     if (!report) return null;
   
@@ -231,17 +316,30 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
               {openMore &&
                 <div id="dropdownDots" className="z-10 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 absolute right-0">
                     <ul className="p-1 text-sm" aria-labelledby="dropdownMenuIconButton">
-                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200'>
+                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={handleCopyLink}>
                         <GoLink />
-                        Copy link
+                        {copied ? 'Copied!' : 'Copy Link'}
                       </button>
                       <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200'>
                         <FiCopy />
                         Duplicate
                       </button>
-                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200'>
+                      <button className='relative flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => setOpenMoveToSubmenu(prevCheck => !prevCheck)}>
                         <PiArrowBendUpRight />
                         Move to
+                        {openMoveToSubmenu && (
+                          <div className='absolute left-[180px] bg-white shadow-sm w-full flex flex-col rounded-lg items-start top-0'>
+                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('new', true)}>
+                              New
+                            </button>
+                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('inProgress', true)}>
+                              In Progress
+                            </button>
+                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('done', true)}>
+                              Done
+                            </button>
+                          </div>
+                        )}
                       </button>
                       <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleDeleteClick(report.id)}>
                         <RiDeleteBin5Line />
@@ -320,7 +418,33 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
                     </label>
                   </div>
                   <div className='pt-2 mt-2 grow-1'>
-                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>Rikhil Makwana</p>
+                    <div className='w-full border-t-1 border-gray-200 pt-2 cursor-pointer relative'>
+                      <div className='after:absolute after:-inset-1 after:border after:border-transparent after:rounded-lg hover:after:border-gray-200 after:top-[4px]' onClick={() => setOpenAssigneeSubmenu(prevCheck => !prevCheck)}>
+                        <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>            
+                          {users.map((site) => (
+                              <div key={site.id} className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg w-fit ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
+                                <Avatar 
+                                  initial={site.name.charAt(0)}
+                                  name={site.name}
+                                />
+                              </div>
+                            ))}
+                        </p>
+                      </div>
+                      {openAssigneeSubmenu && (
+                        <div className='absolute w-full top-[50px] shadow-sm bg-white px-1 py-2 flex flex-col gap-1 rounded-lg z-20'>
+                            {users.map((site) => (
+                              <div key={site.id} className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
+                                <Avatar 
+                                  initial={site.name.charAt(0)}
+                                  name={site.name}
+                                />
+                              </div>
+                            ))}
+                       
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -333,7 +457,7 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
                     </label>
                   </div>
                   <div className='pt-2 mt-2 grow-1'>
-                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>Assign priority</p>
+                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>Assign Priority</p>
                   </div>
                 </div>
 
@@ -346,7 +470,31 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
                     </label>
                   </div>
                   <div className='pt-2 mt-2 grow-1'>
-                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>{status === 'inProgress' ? "In Progress" : Capitalize(status)}</p>
+                    
+                    <div className='w-full border-t-1 border-gray-200 pt-2 cursor-pointer relative'>
+                      <div className='after:absolute after:-inset-1 after:border after:border-transparent after:rounded-lg hover:after:border-gray-200 after:top-[4px]' onClick={() => setOpenStatusSubmenu(prevCheck => !prevCheck)}>
+                        <div className='flex items-center gap-2 bg-gray-200 w-fit px-2 py-1 rounded-lg'>
+                          <div className={`h-3 w-1 ${ (status === 'new') ? 'bg-sky-500' : ((status === 'inProgress') ? ('bg-orange-500') : 'bg-indigo-500')} rounded-full`}></div>
+                          <p className='text-sm'>{status === 'inProgress' ? "In Progress" : Capitalize(status)}</p>
+                        </div>
+                      </div>
+                      {openStatusSubmenu && (
+                        <div className='absolute w-full top-[50px] shadow-sm bg-white px-1 py-2 flex flex-col gap-1 rounded-lg'>
+                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
+                            <div className='h-3 w-1 bg-sky-500 rounded-full'></div>
+                            <p>New</p>
+                          </div>
+                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'inProgress' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('inProgress')}>
+                            <div className='h-3 w-1 bg-orange-500 rounded-full'></div>
+                            <p>In Progress</p>
+                          </div>
+                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'done' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('done')}>
+                            <div className='h-3 w-1 bg-indigo-500 rounded-full'></div>
+                            <p>Done</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -476,38 +624,6 @@ export default function ReportModal({ id, onClose, onDeleteSuccess }: ReportModa
               </div>
             </div>
           </div>
-
-          {/* <button
-            onClick={onClose}
-            className="absolute top-2 right-2 text-gray-500 hover:text-black text-5xl cursor-pointer"
-          >
-            ×
-          </button>
-  
-          <div className="relative w-full h-[60vh] mb-4 rounded overflow-hidden">
-            <Image
-              src={`http://localhost:4000${report.image}`}
-              alt="Screenshot"
-              fill
-              className="object-contain"
-            />
-            <div
-              className="absolute w-4 h-4 bg-red-500 border-2 border-white rounded-full"
-              style={{
-                left: `${report.x}px`,
-                top: `${report.y}px`,
-              }}
-            />
-          </div>
-  
-          <p className="text-sm mb-2 text-black"><strong>Comment:</strong> {report.comment}</p>
-          <p className="text-sm mb-2 text-black">
-            <strong>URL:</strong>{' '}
-            <a href={report.url} className="text-blue-600 underline" target="_blank" rel="noreferrer">
-              {report.url}
-            </a>
-          </p>
-          <p className="text-sm text-black"><strong>Timestamp:</strong> {new Date(report.timestamp).toLocaleString()}</p> */}
         </div>
       </div>
     );

@@ -1,15 +1,21 @@
 'use client';
 
+import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { RiProgress8Line } from "react-icons/ri";
 
 export default function ResolvedIssuesCard() {
   const [resolvedIssues, setResolvedIssues] = useState<number | null>(null);
+  const token = getToken();
 
   useEffect(() => {
     const fetchResolvedIssues = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/stats/resolved');
+        const res = await fetch('http://127.0.0.1:4000/api/stats/resolved', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
         setResolvedIssues(data.resolvedIssues);
       } catch (err) {

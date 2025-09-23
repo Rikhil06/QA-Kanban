@@ -20,6 +20,7 @@ export type Report = {
     timestamp: string;
     status: 'new' | 'inProgress' | 'done';
     imagePath: string;
+    userName: string;
 };
 
 export type Comment = {
@@ -34,7 +35,14 @@ export interface ReportModalProps {
     id: string;
     onClose: () => void;
     onDeleteSuccess?: (deletedId: string) => void;
+    onMoveSuccess?: (reportId: string, newStatus: ColumnId) => void;
 }
+
+export type Site = {
+    id: string,
+    name: string,
+    email: string,
+};
 
 export type ColumnId = 'new' | 'inProgress' | 'done';
 

@@ -1,15 +1,21 @@
 'use client';
 
+import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { RiProgress6Line } from "react-icons/ri";
 
 export default function InProgressCard() {
   const [inProgressIssues, setInProgressIssues] = useState<number | null>(null);
+  const token = getToken();
 
   useEffect(() => {
     const fetchOpenIssues = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/stats/in-progress');
+        const res = await fetch('http://127.0.0.1:4000/api/stats/in-progress', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
         setInProgressIssues(data.inProgressIssues);
       } catch (err) {

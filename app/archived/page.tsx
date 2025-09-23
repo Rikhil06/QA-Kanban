@@ -1,7 +1,9 @@
-import React from 'react'
+import ArchivePage from '@/components/cards/ArchivedCard';
 
-export default function page() {
+export default async function Page() {
   return (
-    <div>Archived</div>
-  )
+      <div className='max-w-11/12 mx-auto mt-12'>
+        <ArchivePage />
+      </div>
+  );
 }

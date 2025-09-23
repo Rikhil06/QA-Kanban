@@ -9,11 +9,18 @@ import ReportsThisWeekCard from '@/components/cards/ReportsThisWeekCard';
 import SiteList from '@/components/cards/SitesCard';
 import InProgressCard from '@/components/cards/InProgressCard';
 import ResolvedIssuesCard from '@/components/cards/ResolvedCard';
+import { getToken } from '@/lib/auth';
 
-// export const revalidate = 0;
+const token = getToken();
+
+console.log(token);
+
+if (!token) {
+  window.location.href = '/login'; // or show login modal
+}
 
 async function fetchReports(): Promise<QAReport[]> {
-  const res = await fetch('http://localhost:4000/uploads', { cache: 'no-store' });
+  const res = await fetch('http://127.0.0.1:4000/uploads', { headers: { Authorization: `Bearer ${token}` },cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch reports');
   return res.json();
 }

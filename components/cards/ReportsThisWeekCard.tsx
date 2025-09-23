@@ -1,13 +1,19 @@
 'use client';
 
+import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { TbReportSearch } from "react-icons/tb";
 
 export default function ReportsThisWeekCard() {
   const [count, setCount] = useState<number | null>(null);
+  const token = getToken();
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/stats/reports-this-week')
+    fetch('http://127.0.0.1:4000/api/stats/reports-this-week', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
       .then((data) => setCount(data.reportsThisWeek))
       .catch((err) => console.error('Failed to fetch reports this week', err));

@@ -1,7 +1,7 @@
 // utils/updateStatus.ts
 export async function updateStatus(reportId: string, newStatus: string) {
     try {
-      const res = await fetch(`http://localhost:4000/api/report/${reportId}/status`, {
+      const res = await fetch(`http://127.0.0.1:4000/api/report/${reportId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
