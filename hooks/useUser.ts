@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getToken } from '@/lib/auth';
 
 export const useUser = () => {
@@ -21,8 +21,8 @@ export const useUser = () => {
         if (data?.user) setUser(data.user);
         setLoading(false);
       });
-  }, [user]);
+  }, []);
 
 
-  return { user, loading };
+return useMemo(() => ({ user, loading }), [user, loading]);
 };

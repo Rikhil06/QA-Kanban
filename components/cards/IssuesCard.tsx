@@ -17,7 +17,6 @@ export default function OpenIssuesCard() {
           },
         });
         const data = await res.json();
-        console.log(data);
         setOpenIssues(data.openIssues);
       } catch (err) {
         console.error('Failed to load open issues:', err);
@@ -26,8 +25,6 @@ export default function OpenIssuesCard() {
 
     fetchOpenIssues();
   }, []);
-
-  console.log(openIssues);
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex items-center gap-4 border border-gray-100 hover:shadow-lg transition">

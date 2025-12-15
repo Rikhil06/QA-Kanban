@@ -7,7 +7,7 @@ import { Report, ColumnId } from '@/types/types';
 // import Image from 'next/image';
 import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
-import { Capitalize } from '@/utils/helpers';
+import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import Dropdown from '@/components/buttons/Dropdown';
 import Avatar from '@/components/cards/Avatar';
 import { Comment } from '@/types/types';
@@ -19,6 +19,8 @@ import { GoCommentDiscussion } from "react-icons/go";
 import { RiAttachment2 } from "react-icons/ri";
 import { RxDividerVertical } from "react-icons/rx";
 import { getToken } from '@/lib/auth';
+import { Bug, Clock } from 'lucide-react';
+import { formatTimeAgo } from '@/utils/formatTimeAgo';
 
 export default function SiteReportsPage() {
   const router = useRouter();
@@ -104,13 +106,22 @@ export default function SiteReportsPage() {
     },
   };
 
-  const [columns, setColumns] = useState(initialColumns);;
+  const [columns, setColumns] = useState(initialColumns);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
+
+  // Sort reports by createdAt (or updatedAt depending on your schema)
+    const sortedReports = [...reports].sort((a, b) => {
+      const dateA = new Date(a.timestamp).getTime();
+      const dateB = new Date(b.timestamp).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
     setColumns({
       new: {
         name: 'New',
-        items: reports.filter((r) => r.status === 'new'),
+        items: sortedReports.filter((r) => r.status === 'new'),
         columnColour: [
           {
             bgColour: 'bg-sky-100', 
@@ -120,7 +131,7 @@ export default function SiteReportsPage() {
       },
       inProgress: {
         name: 'In Progress',
-        items: reports.filter((r) => r.status === 'inProgress'),
+        items: sortedReports.filter((r) => r.status === 'inProgress'),
         columnColour: [
           {
             bgColour: 'bg-orange-100', 
@@ -130,7 +141,7 @@ export default function SiteReportsPage() {
       },
       done: {
         name: 'Done',
-        items: reports.filter((r) => r.status === 'done'),
+        items: sortedReports.filter((r) => r.status === 'done'),
         columnColour: [
           {
             bgColour: 'bg-indigo-100', 
@@ -139,9 +150,7 @@ export default function SiteReportsPage() {
         ]
       },
     });
-  }, [reports]);
-
-  // console.log(reports);
+  }, [reports, sortOrder]);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -150,7 +159,7 @@ export default function SiteReportsPage() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const newStatus = destination.droppableId as ColumnId;
-    updateStatus(draggableId, newStatus);
+    updateStatus(token, draggableId, newStatus);
 
     const sourceCol = columns[source.droppableId as ColumnId];
     const destCol = columns[destination.droppableId as ColumnId];
@@ -181,20 +190,26 @@ export default function SiteReportsPage() {
     router.push(`?${reportIdParams.toString()}`);
   }
 
+  console.log(columns);
+
   return (
     <>
-      <div className='px-5 py-3 border-1 border-gray-200 flex items-center justify-between'>
+      {/* <div className='px-5 py-3 border-1 border-gray-200 flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>{Capitalize(slug)}</h2>
         <div className="flex">
           <Dropdown 
             text="Board" 
           />
           <Dropdown 
-            text="Newest First" 
+            text={sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}
+            options={[
+              { label: 'Newest First', onClick: () => setSortOrder('newest') },
+              { label: 'Oldest First', onClick: () => setSortOrder('oldest') },
+            ]}
           />
         </div>
-      </div>
-      <div className='px-[10px] py-4 flex gap-5 h-full'>
+      </div> */}
+      <div className='flex h-[calc(100vh-7.5rem)] gap-4 overflow-x-auto px-6 py-6'>
         <DragDropContext onDragEnd={onDragEnd}>
           {Object.entries(columns).map(([id, column]) => (
             <Droppable droppableId={id} key={id}>
@@ -202,19 +217,15 @@ export default function SiteReportsPage() {
                 <div
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  style={{
-                    padding: 10,
-                    borderRadius: 8,
-                    width: 300,
-                    minHeight: 500,
-                    maxHeight: '80vh',
-                    overflowY: 'auto',
-                  }}
+                  className='flex min-w-[320px] flex-col rounded-xl border transition-colors border-white/6 bg-[#1C1C1C]/40'
                 >
-                  <div className='flex justify-between items-center'>
-                    <h2 className={`text-black p-1 px-3 w-fit rounded-lg text-sm font-semibold ${column.columnColour[0].bgColour} border-l-5 ${column.columnColour[0].accentColour}`}>{column.name}</h2>
-                    <p className='text-gray-300'>{column.items.length}</p>
+                  <div className='flex items-center justify-between border-b border-white/6 px-4 py-3'>
+                    <div className='flex items-center gap-2'>
+                      <h2 className='text-sm text-white/90'>{column.name}</h2>
+                      <p className='flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60'>{column.items.length}</p>
+                    </div>
                   </div>
+                  <div className='flex-1 space-y-2 overflow-y-auto p-3'>
                   {column.items.map((item, index) => (
                     <Draggable draggableId={item.id} index={index} key={item.id}>
                       {(provided) => (
@@ -222,29 +233,71 @@ export default function SiteReportsPage() {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           ref={provided.innerRef}
-                          className='mt-5 shadow-sm hover:shadow-lg transition rounded-lg mb-2.5 p-2.5 bg-white flex flex-col gap-2.5 cursor-pointer'
+                          className='group cursor-grab rounded-lg border border-white/8 bg-[#222] p-3.5 shadow-lg transition-all hover:border-white/15 hover:shadow-xl hover:shadow-indigo-500/5'
                           style={{
                             ...provided.draggableProps.style,
                           }}
                           onClick={() => openModal(item.id)}
                         >
-                          <p className='text-black text-sm font-bold'>{item.comment}</p>
+
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Bug className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                            <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${getPriorityColor(item.priority)}`} />
+                          </div>
+                            <div className="flex gap-1">
+                                <span
+                                  className="rounded bg-white/6 px-1.5 py-0.5 text-[10px] text-white/50"
+                                >
+                                  {Capitalize(item.type)}
+                                </span>
+                            </div>
+                        </div>
+
+
+                        {/* Card title */}
+                        <h4 className="mb-1.5 text-sm text-white/90 group-hover:text-white">
+                          {item.title}
+                        </h4>
+
+                        {/* Card description */}
+                        {item.comment && (
+                          <p className="mb-3 text-xs text-white/40 line-clamp-2">
+                            {item.comment}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs text-white/40">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatTimeAgo(item.timestamp)}</span>
+                          </div>
+                          
+                          {/* Assignee avatar */}
+                          <div
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[10px] ring-2 ring-[#222] transition-transform group-hover:scale-110"
+                            title={item.userName}
+                          >
+                            {getInitials(item.userName)}
+                          </div>
+                        </div>
+
                           {/* Authors */}
-                          <div className='flex flex-wrap gap-2'>
+                          {/* <div className='flex flex-wrap gap-2'>
                             <Avatar 
                               initial={item.userName.charAt(0)}
                               name={item.userName}
                             />
-                          </div>
+                          </div> */}
 
                           {/* Priority */}
-                          <div className='flex items-center gap-2 bg-gray-100 w-fit px-2 py-1 rounded-2xl'>
+                          {/* <div className='flex items-center gap-2 bg-gray-100 w-fit px-2 py-1 rounded-2xl'>
                             <span className="block w-3.5 h-3.5 bg-gray-200 rounded-full"></span>
                             <span className='text-xs'>Low</span>
-                          </div>
+                          </div> */}
 
                           {/* Issue Type */}
-                          <div className='flex items-center flex-wrap gap-2'>
+                          {/* <div className='flex items-center flex-wrap gap-2'>
                             <div className='flex items-center gap-2 w-fit px-2 py-1 rounded-2xl border-1 border-gray-200'>             
                               <FaEye />
                               <span className='text-xs'>Visual</span>
@@ -253,10 +306,10 @@ export default function SiteReportsPage() {
                               <IoCode />
                               <span className='text-xs'>Functionality</span>
                             </div>
-                          </div>
+                          </div> */}
 
                           {/* Comments, Attachments & Progress */}
-                          <div className='flex items-center justify-between'>
+                          {/* <div className='flex items-center justify-between'>
                             <div className='flex items-center'>
                               {commentsByReportId[item.id]?.length > 0 && (
                                 <>
@@ -280,12 +333,13 @@ export default function SiteReportsPage() {
                                 <span className='text-xs text-gray-500'>25%</span>
                               </div>
                             </div>
-                          </div>
+                          </div> */}
 
                         </div>
                       )}
                     </Draggable>
                   ))}
+                  </div>
                   {provided.placeholder}
                 </div>
               )}
@@ -294,7 +348,7 @@ export default function SiteReportsPage() {
         </DragDropContext>
 
         {selectedId && 
-          <ReportModal 
+          <ReportModal
             id={selectedId} 
             onClose={() => closeModal()} 
             onDeleteSuccess={handleReportDeleted}

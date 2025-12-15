@@ -1,630 +1,708 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-import { ColumnId, Report, ReportModalProps } from '@/types/types';
-import { Comment, Site } from '@/types/types';
-import { ToastContainer, toast } from 'react-toastify';
-import Avatar from './cards/Avatar';
+  import Image from 'next/image';
+import { X, Bug, Sparkles, CheckSquare, Calendar, MessageSquare, Send, ChevronDown, Edit2, Paperclip, File } from 'lucide-react';
+import { ReportModalProps, Report, Site, ColumnId, Priority, Comment, Attachment } from '@/types/types';
+import { getToken } from '@/lib/auth';
+import { usePathname } from 'next/navigation';
+import { Capitalize, getInitials, getPriorityColor, timeAgo } from '@/utils/helpers';
+import { toast } from 'react-toastify';
 import Zoom from 'react-medium-image-zoom'
-import 'react-medium-image-zoom/dist/styles.css';
-import { Capitalize } from '@/utils/helpers';
-import { deleteReport } from '@/utils/deleteReport';
-import YesNoAlert from './Alert';
+import CommentItem from './comment/CommentItem';
+import { useUser } from '@/context/UserContext';
 
-// Icons
-import { GoLink } from "react-icons/go";
-import { FiCopy } from "react-icons/fi";
-import { PiArrowBendUpRight } from "react-icons/pi";
-import { RiAttachment2, RiDeleteBin5Line } from "react-icons/ri";
-import { FiUsers } from "react-icons/fi";
-import { FaRegImages, FaSignal } from "react-icons/fa6";
-import { GrStatusPlaceholder } from "react-icons/gr";
-import { GoIssueTrackedBy } from "react-icons/go";
-import { IoDocumentAttachOutline } from "react-icons/io5";
-import { MdOutlineDescription, MdOutlineEmojiEmotions, MdOutlineKeyboardVoice, MdSend } from 'react-icons/md';
-import { useParams, usePathname } from 'next/navigation';
+const typeIcons = {
+  bug: Bug,
+  feature: Sparkles,
+  task: CheckSquare,
+};
 
+const priorityColors = {
+  low: 'bg-slate-500',
+  medium: 'bg-blue-500',
+  high: 'bg-orange-500',
+  urgent: 'bg-red-500',
+};
 
-export default function ReportModal({ id, onClose, onDeleteSuccess, onMoveSuccess }: ReportModalProps) {
-    const { slug } = useParams();
-      const pathname = usePathname();
+// const statusOptions: Issue['status'][] = ['backlog', 'in-progress', 'review', 'done'];
+// const priorityOptions: Issue['priority'][] = ['low', 'medium', 'high', 'urgent'];
+// const typeOptions: Issue['type'][] = ['bug', 'feature', 'task'];
 
-    const [copied, setCopied] = useState(false);
-    const [report, setReport] = useState<Report | null>(null);
-    const [openMore, setOpenMore] = useState<boolean>(false);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState('');
-    const [replyToId, setReplyToId] = useState<string | null>(null);
-    const [fileNames, setFileNames] = useState<string[]>([]);
-    const [status, setStatus] = useState<string>('');
-    const [isAlertOpen, setIsAlertOpen] = useState(false);
-    const [reportIdToDelete, setReportIdToDelete] = useState<string | null>(null);
-    const [openMoveToSubmenu, setOpenMoveToSubmenu] = useState<boolean>(false);
-    const [openStatusSubmenu, setOpenStatusSubmenu] = useState<boolean>(false);
-    const [openAssigneeSubmenu, setOpenAssigneeSubmenu] = useState<boolean>(false);
-    const [users, setUsers] = useState<Site[]>([]);
+  export default function ReportModal({ id, onClose, onDeleteSuccess, onMoveSuccess }: ReportModalProps) {
 
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const inputRef = useRef<HTMLInputElement | null>(null);
+  const { user, loading } = useUser();
+  const token = getToken();
+  const pathname = usePathname();
+
+  const [report, setReport] = useState<Report | null>(null);
+  const [status, setStatus] = useState<string>('');
+  const [priority, setPriority] = useState<string>('');
+  const [users, setUsers] = useState<Site[]>([]);
   
-    useEffect(() => {
-      const fetchReport = async () => {
-        const res = await fetch(`http://127.0.0.1:4000/uploads/${id}.json`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setReport(data);
-      };
-  
-      fetchReport();
+  const [comments, setComments] = useState<Comment[]>();
+  const [newComment, setNewComment] = useState('');
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [fileNames, setFileNames] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<Attachment[]>([]);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-      const fetchComments = async () => {
-        const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setComments(data);
-      };
-      fetchComments();
+  useEffect(() => {
+    const fetchReport = async () => {
+      const res = await fetch(`http://127.0.0.1:4000/uploads/${id}.json`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setReport(data);
+    };
 
-      const fetchStatus= async () => {
-        const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setStatus(data.status);
-      };
-      fetchStatus();
-      
-    }, [id]);
+    fetchReport();
 
-    useEffect(() => {
-      const siteId = pathname?.split("/").pop();
-  
-      if (!siteId) return;
-  
-      const fetchUsers = async () => {
-        try {
-          const res = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/users`);
-          if (!res.ok) return;
-          const data = await res.json();
-          setUsers(data);
-        } catch (error) {
-          console.error("Error fetching users:", error);
-        }
-      };
-  
-      fetchUsers();
-    }, [pathname]);
+    const fetchComments = async () => {
+      const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setComments(data);
+    };
+    fetchComments();
 
-    console.log(users);
+    const fetchStatus= async () => {
+      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
+          headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStatus(data.status);
+    };
+    fetchStatus();
 
-    // Close when clicking outside
-    useEffect(() => {
-      function handleClickOutside(event: MouseEvent) {
-        if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-          setOpenMore(false);
-        }
-      }
+    const fetchPriority= async () => {
+      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/priority`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPriority(data.priority);
+    };
+    fetchPriority();         
+  }, [id]);
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
+  useEffect(() => {
+    const siteId = pathname?.split("/").pop();
 
-    useEffect(() => {
-      const handleEscKey = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          onClose();
-        }
-      };
-    
-      document.addEventListener('keydown', handleEscKey);
-      return () => {
-        document.removeEventListener('keydown', handleEscKey);
-      };
-    }, [onClose]);
+    if (!siteId) return;
 
-    const handleAddComment = async () => {
-      if (newComment.trim().length === 0) return;
-    
+    const fetchUsers = async () => {
       try {
-        const payload = {
-          reportId: id, // from props or state - the current report id
-          content: newComment.trim(),
-          userId: replyToId,
-          attachments: [...fileNames],
-        };
-
-        const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`, {
-          
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to save comment');
-        }
-        const savedComment = await res.json();
-        
-        setComments((prev) => [...prev, savedComment]);
-        setNewComment('');
-        setReplyToId(null);
-        setFileNames([]);
+        const res = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/users`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setUsers(data);
       } catch (error) {
-        console.error(error);
-        toast.error("Error saving comment");
+        console.error("Error fetching users:", error);
       }
     };
-    
-    const handleReply = (id: string) => {
-      setReplyToId(id);
-    };
-    
-    const handleCancelReply = () => {
-      setReplyToId(null);
-    };
 
-    const handleDeleteClick = (reportId: string) => {
-      setReportIdToDelete(reportId);
-      setIsAlertOpen(true);
-    };    
+    fetchUsers();
+  }, [pathname]);
 
-    const handleYes = async () => {
-      if (!reportIdToDelete) return;
-    
-      try {
-        await deleteReport(reportIdToDelete);
-        console.log(`Report ${reportIdToDelete} deleted.`);
-    
-        // ✅ Optimistically update UI by calling parent callback
-        if (onDeleteSuccess) {
-          onDeleteSuccess(reportIdToDelete);
-        }
-    
-        // ✅ Auto-close modal
+  const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
+        body: JSON.stringify({ status: newStatus }),
+      });
+  
+      if (!res.ok) throw new Error('Failed to move report');
+  
+      const updated = await res.json();
+      setStatus(updated.status);
+      toast.success(`Moved to ${Capitalize(updated.status)}!`);
+
+      if (onMoveSuccess) {
+        onMoveSuccess(id, newStatus);
+      }
+
+      if (shouldClose) {
         onClose();
-    
-        setIsAlertOpen(false);
-        setReportIdToDelete(null);
-      } catch (error) {
-        console.error('Failed to delete report:', error);
-        alert('Something went wrong while deleting the report.');
       }
-    };
-    
-    const handleNo = () => {
-      setIsAlertOpen(false);
-      setReportIdToDelete(null);
-    };    
 
-    const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
-      try {
-        const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
-    
-        if (!res.ok) throw new Error('Failed to move report');
-    
-        const updated = await res.json();
-        setStatus(updated.status);
-        toast.success(`Moved to ${Capitalize(updated.status)}!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to move report");
+    }
+  };
 
-        if (onMoveSuccess) {
-          onMoveSuccess(id, newStatus);
-        }
+  const handlePriorityChange = async (newStatus: Priority, shouldClose = false) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/priority`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
+        body: JSON.stringify({ priority: newStatus }),
+      });
+  
+      if (!res.ok) throw new Error('Failed to update status');
+  
+      const updated = await res.json();
+      setPriority(updated.priority);
+      setOpenDropdown(null);
+      toast.success(`Moved to ${Capitalize(updated.priority)}!`);
 
-        console.log(shouldClose);
-
-        if (shouldClose) {
-          onClose();
-        }
-
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to move report");
+      if (shouldClose) {
+        onClose();
       }
-    };
 
-    function renderComments(commentsList: Comment[], parentId: string | null = null) {
-      return commentsList
-        .filter((item) => item.reportId === parentId)
-        .map((item) => (
-          <li key={item.id} className='bg-gray-100 p-2 rounded-md ml-0 mb-2'>
-            <p>{item.content}</p>
-
-            {/* Attachments */}
-            {item.attachments.map((file: any, idx) => {
-              return (
-                <a 
-                  key={idx} 
-                  className='flex items-center gap-2 p-1 rounded-md border border-gray-300'
-                >
-                  <IoDocumentAttachOutline />
-                  <span className='text-gray-500'>{file.url}</span>
-                </a>
-              );
-            })}
-
-
-            <button 
-              aria-label='Reply'
-              onClick={() => handleReply(item.id)}
-              className='text-blue-500 text-sm mt-2'
-            >
-              Reply
-            </button>
-    
-            {/* Display children with indentation */}
-            <ul className=' ml-6 mt-2 space-y-2'>{renderComments(commentsList, item.id)}</ul>
-          </li>
-        ));
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update status");
     }
-    
-    function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-      const files = e.target.files;
-      if (!files) return;
-  
-      const names = Array.from(files).map((file) => file.name);
-      const notify = () => toast.success("File Uploaded Successfully!");
-      notify();
-      setFileNames((prevFileNames) => [...prevFileNames, ...names]);
-    }
+  };
 
-    function handleButtonClick(e: React.MouseEvent<HTMLButtonElement>) {
-      e.preventDefault();
-      if (!inputRef || !inputRef.current) return;
-  
-      inputRef.current.click();
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      handleAddComment();
     }
+  };
 
-    const handleCopyLink = async () => {
-      const reportUrl = `${window.location.origin}/reports/${slug}?report=${id}`;
-      try {
-        await navigator.clipboard.writeText(reportUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000); // Reset after 2s
-      } catch (err) {
-        console.error('Failed to copy:', err);
+  const handleAddComment = async () => {
+    if (newComment.trim().length === 0) return;
+      
+    try {
+      const payload = {
+        reportId: id, // from props or state - the current report id
+        content: newComment.trim(),
+        userId: replyToId,
+        // attachments: [...filePreviews],
+      };
+
+      const formData = new FormData();
+      
+      Object.entries(payload).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, String(value));
       }
-    };
-  
-    if (!report) return null;
-  
-    return (
-      <div ref={wrapperRef} className="fixed inset-0 bg-gray-900/50 bg-opacity-70 z-50 flex items-center justify-center">
-        <div className="flex flex-col pointer-events-auto bg-white rounded-xl w-full max-w-4xl h-[calc(100%-56px)] min-h-[calc(100%-56px)] max-h-full relative shadow-xl">
-          {/* Header */}
-          <div className='flex items-center justify-between p-4 border-b-1 border-gray-200'>
-            <h2 className='font-semibold text-[16px]'>Task details</h2>
-            <div className="flex items-center gap-2">
-            <div className='relative'>
-              <button 
-                id="dropdownMenuIconButton" 
-                className="inline-flex items-center p-2 text-sm font-medium text-center text-gray-900 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none dark:text-white focus:ring-gray-50 cursor-pointer" 
-                type="button" 
-                onClick={() => setOpenMore((prev) => !prev)}
-              >
-                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 15">
-                  <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
-                </svg>
-              </button>
+    });
 
-              {/* Dropdown menu */}
-              {openMore &&
-                <div id="dropdownDots" className="z-10 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 absolute right-0">
-                    <ul className="p-1 text-sm" aria-labelledby="dropdownMenuIconButton">
-                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={handleCopyLink}>
-                        <GoLink />
-                        {copied ? 'Copied!' : 'Copy Link'}
-                      </button>
-                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200'>
-                        <FiCopy />
-                        Duplicate
-                      </button>
-                      <button className='relative flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => setOpenMoveToSubmenu(prevCheck => !prevCheck)}>
-                        <PiArrowBendUpRight />
-                        Move to
-                        {openMoveToSubmenu && (
-                          <div className='absolute left-[180px] bg-white shadow-sm w-full flex flex-col rounded-lg items-start top-0'>
-                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('new', true)}>
-                              New
-                            </button>
-                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('inProgress', true)}>
-                              In Progress
-                            </button>
-                            <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleMoveTo('done', true)}>
-                              Done
-                            </button>
-                          </div>
-                        )}
-                      </button>
-                      <button className='flex items-center gap-2 px-4 py-2 w-full rounded-lg transition-all cursor-pointer hover:bg-gray-200' onClick={() => handleDeleteClick(report.id)}>
-                        <RiDeleteBin5Line />
-                        Delete
-                      </button>
-                    </ul>
-                </div>
-              }
+      fileNames.forEach((file) => {
+        formData.append('attachments', file);
+      });
 
-            </div>
+      const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`},
+        body: formData,
+      });
 
-            <button type="button" className="inline-flex items-center justify-center focus:outline-hidden disabled:opacity-50 disabled:pointer-events-none bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 cursor-pointer" aria-label="Close" aria-expanded="true" onClick={onClose}>
-              <span className="sr-only">Close</span>
-              <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6 6 18"></path>
-                <path d="m6 6 12 12"></path>
-              </svg>
-            </button>
+      console.log(res);
 
+
+      if (!res.ok) {
+        throw new Error('Failed to save comment');
+      }
+      const savedComment = await res.json();
+      
+      setComments((prev: any) => [...prev, savedComment]);
+      setNewComment('');
+      setReplyToId(null);
+      setFileNames([]);
+      setFilePreviews([]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error saving comment");
+    }
+  };
+
+  // const Icon = typeIcons[issue.type];
+
+  // const handleUpdateField = <K extends keyof Issue>(field: K, value: Issue[K]) => {
+  //   onUpdateIssue({ ...issue, [field]: value });
+  //   setOpenDropdown(null);
+  // };
+
+  // const handleSaveDescription = () => {
+  //   onUpdateIssue({ ...issue, description: editedDescription });
+  //   setIsEditingDescription(false);
+  // };
+
+  const handleCancelDescription = () => {
+    setEditedDescription('');
+    setIsEditingDescription(false);
+  };
+
+  const handleReply = async (parentId: string) => {
+  if (!replyContent.trim()) return;
+
+  try {
+    const res = await fetch(
+      `http://127.0.0.1:4000/api/reports/${id}/comments`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: replyContent.trim(),
+          parentId, // 👈 this makes it a reply
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error('Failed to save reply');
+
+    const savedReply = await res.json();
+
+    // update UI
+    setComments((prev: any) =>
+      prev.map((comment: any) =>
+        comment.id === parentId
+          ? {
+              ...comment,
+              replies: [...(comment.replies || []), savedReply],
+            }
+          : comment
+      )
+    );
+
+    setReplyContent('');
+    setReplyToId(null);
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to save reply');
+  }
+};
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+
+    const newAttachments: Attachment[] = newFiles.map((file) => ({
+      id: Date.now().toString() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: `/uploads/${file.name}`
+    }));
+
+    setFileNames((prev) => [...prev, ...newFiles]);
+    setFilePreviews((prev) => [...prev, ...newAttachments]);
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setFilePreviews(filePreviews.filter((a) => a.id !== id));
+  };
+
+  const totalComments = comments?.reduce((total, comment) => {
+    return total + 1 + (comment.replies?.length || 0);
+  }, 0) ?? 0;
+
+  if (!report) return null;
+  if (loading) return null;
+
+  console.log(report);
+
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/8 bg-[#1C1C1C] shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+          <div className="flex items-center gap-3">
+            {/* <Icon className="h-5 w-5 text-white/40" /> */}
+            <h2 className="text-white/90">{report.title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60 cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+          {/* Screenshot */}
+          <div className="border-b border-white/8 p-6">
+            <div className="overflow-hidden rounded-lg border border-white/8 bg-[#222]">
+              <div className='relative h-64'>
+                <Zoom zoomMargin={45}>
+                  <Image
+                      src={report.image}
+                      alt="Screenshot"
+                      fill
+                      className="object-cover rounded-2xl"
+                      unoptimized
+                      
+                    />
+                </Zoom>
+              </div>
             </div>
           </div>
 
-          <YesNoAlert
-            message="Are you sure you want to delete this report?"
-            onYes={handleYes}
-            onNo={handleNo}
-            isOpen={isAlertOpen}
-          />
-          
-          {/* Body */}
-          <div className='overflow-y-auto dark:[&::-webkit-scrollbar-track]:bg-neutral-700 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500'>
-              <div className="p-8">
-                {/* Title */}
-                <div className='w-full'>
-                  <textarea 
-                  name="title" 
-                  id="title"
-                  rows={1}
-                  placeholder="Untitled"
-                  autoFocus
-                  className='h-[38px] font-semibold rounded-md resize-none w-full block text-[16px] px-1.5 py-2 bg-gray-100 hover:border-1 hover:border-gray-200 focus:bg-gray-200 focus:ring-0 focus:border-0 focus:border-transparent focus-visible:outline-0'
-                  defaultValue={report.comment}
-                  disabled
+          {/* Metadata grid */}
+          <div className="grid grid-cols-2 gap-4 border-b border-white/8 p-6">
+            {/* Assignee */}
+            <div>
+              <label className="mb-2 block text-xs text-white/40">Assignee</label>
+              <div className="relative">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')}
+                  className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
+                    {getInitials(report.userName)}
+                  </div>
+                  <span className="text-sm text-white/80">{report.userName}</span>
+                  <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
+                </button>
+
+                {openDropdown === 'assignee' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
+                      {users.map((option) => (
+                        <button
+                          key={option.id}
+                          // onClick={() => handleUpdateField('assignee', option)}
+                          className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
+                            {getInitials(option.name)}
+                          </div>
+                          <span>{option.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="mb-2 block text-xs text-white/40">Status</label>
+              <div className="relative">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
+                >
+                  <div className={`h-2 w-2 rounded-full ${ (status === 'new') ? 'bg-sky-500' : ((status === 'inProgress') ? ('bg-orange-500') : 'bg-indigo-500')}`} />
+                  <span className="text-sm capitalize text-white/80">{status === 'inProgress' ? "In Progress" : Capitalize(status)}</span>
+                  <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
+                </button>
+
+                {openDropdown === 'status' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
+                        <button
+                          onClick={() => handleMoveTo('new')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-sky-500" />
+                          <span className="capitalize">New</span>
+                        </button>
+                        <button
+                          onClick={() => handleMoveTo('inProgress')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-orange-500" />
+                          <span className="capitalize">In Progress</span>
+                        </button>
+                        <button
+                          onClick={() => handleMoveTo('done')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-indigo-500" />
+                          <span className="capitalize">Done</span>
+                        </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <label className="mb-2 block text-xs text-white/40">Priority</label>
+              <div className="relative">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
+                >
+                  <div className={`h-2 w-2 rounded-full ${getPriorityColor(priority)}`} />
+                  <span className="text-sm capitalize text-white/80">{priority}</span>
+                  <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
+                </button>
+
+                {openDropdown === 'priority' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
+                        <button
+                          onClick={() => handlePriorityChange('not assigned')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className={`h-2 w-2 rounded-full bg-sky-500`} />
+                          <span className="capitalize">Not Assigned</span>
+                        </button>
+                        <button
+                          onClick={() => handlePriorityChange('low')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className={`h-2 w-2 rounded-full bg-green-500 `} />
+                          <span className="capitalize">Low</span>
+                        </button>
+                        <button
+                          onClick={() => handlePriorityChange('medium')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className={`h-2 w-2 rounded-full bg-orange-500`} />
+                          <span className="capitalize">Medium</span>
+                        </button>
+                        <button
+                          onClick={() => handlePriorityChange('high')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className={`h-2 w-2 rounded-full bg-red-500`} />
+                          <span className="capitalize">High</span>
+                        </button>
+                        <button
+                          onClick={() => handlePriorityChange('urgent')}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div className={`h-2 w-2 rounded-full bg-red-600`} />
+                          <span className="capitalize">Urgent</span>
+                        </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Issue Type */}
+            <div>
+              <label className="mb-2 block text-xs text-white/40">Issue type</label>
+              <div className="relative">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'type' ? null : 'type')}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
+                >
+                  {/* <Icon className="h-4 w-4 text-white/40" /> */}
+                  <span className="text-sm capitalize text-white/80">Contrast issue</span>
+                  <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
+                </button>
+
+                {openDropdown === 'type' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
+                        {/* // const TypeIcon = typeIcons[option]; */}
+                          <button
+                            // onClick={() => handleUpdateField('type', option)}
+                            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                          >
+                            {/* <TypeIcon className="h-4 w-4 text-white/40" /> */}
+                            <span className="capitalize">Contrast issue</span>
+                          </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Last Updated */}
+            <div className="col-span-2">
+              <label className="mb-2 block text-xs text-white/40">Last Updated</label>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                <Calendar className="h-4 w-4 text-white/40" />
+                <span className="text-sm text-white/80">{timeAgo(report.timestamp)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="border-b border-white/8 p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <label className="text-xs text-white/40">Description</label>
+              {!isEditingDescription && (
+                <button
+                  onClick={() => setIsEditingDescription(true)}
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-white/40 transition-colors hover:bg-white/8 hover:text-white/60"
+                >
+                  <Edit2 className="h-3 w-3" />
+                  Edit
+                </button>
+              )}
+            </div>
+
+            {isEditingDescription ? (
+              <div>
+                <textarea
+                  value={report.comment}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  placeholder="Add a description..."
+                  className="w-full resize-none rounded-lg border border-white/8 bg-[#222] px-3 py-2 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
+                  rows={4}
+                />
+                <div className="mt-2 flex justify-end gap-2">
+                  <button
+                    onClick={handleCancelDescription}
+                    className="rounded-lg border border-white/8 px-3 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/8"
                   >
-                  </textarea>
+                    Cancel
+                  </button>
+                  <button
+                    // onClick={handleSaveDescription}
+                    className="flex items-center gap-2 rounded-lg bg-indigo-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-indigo-600"
+                  >
+                    Save
+                  </button>
                 </div>
+              </div>
+            ) : (
+              <p className="text-sm text-white/70 leading-relaxed">
+                {report.comment || 'No description provided.'}
+              </p>
+            )}
+          </div>
 
-                {/* Image */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <FaRegImages />
-                      Image
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    <div className='relative w-48 h-32'>
-                    <Zoom zoomMargin={45}>
-                      <Image
-                          src={`http://localhost:4000${report.image}`}
-                          alt="Screenshot"
-                          fill
-                          className="object-cover rounded-2xl"
-                        />
-                    </Zoom>
-                    </div>
-                  </div>
-                </div>
+          {/* Comments Section */}
+          <div className="p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-white/40" />
+              <h3 className="text-sm text-white/60">
+                Comments ({totalComments})
+              </h3>
+            </div>
 
-                {/* Asignee */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <FiUsers />
-                      Assignee
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    <div className='w-full border-t-1 border-gray-200 pt-2 cursor-pointer relative'>
-                      <div className='after:absolute after:-inset-1 after:border after:border-transparent after:rounded-lg hover:after:border-gray-200 after:top-[4px]' onClick={() => setOpenAssigneeSubmenu(prevCheck => !prevCheck)}>
-                        <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>            
-                          {users.map((site) => (
-                              <div key={site.id} className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg w-fit ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
-                                <Avatar 
-                                  initial={site.name.charAt(0)}
-                                  name={site.name}
-                                />
-                              </div>
-                            ))}
-                        </p>
-                      </div>
-                      {openAssigneeSubmenu && (
-                        <div className='absolute w-full top-[50px] shadow-sm bg-white px-1 py-2 flex flex-col gap-1 rounded-lg z-20'>
-                            {users.map((site) => (
-                              <div key={site.id} className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
-                                <Avatar 
-                                  initial={site.name.charAt(0)}
-                                  name={site.name}
-                                />
-                              </div>
-                            ))}
-                       
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Priority */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <FaSignal />
-                      Priority
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>Assign Priority</p>
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <GrStatusPlaceholder />
-                      Status
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    
-                    <div className='w-full border-t-1 border-gray-200 pt-2 cursor-pointer relative'>
-                      <div className='after:absolute after:-inset-1 after:border after:border-transparent after:rounded-lg hover:after:border-gray-200 after:top-[4px]' onClick={() => setOpenStatusSubmenu(prevCheck => !prevCheck)}>
-                        <div className='flex items-center gap-2 bg-gray-200 w-fit px-2 py-1 rounded-lg'>
-                          <div className={`h-3 w-1 ${ (status === 'new') ? 'bg-sky-500' : ((status === 'inProgress') ? ('bg-orange-500') : 'bg-indigo-500')} rounded-full`}></div>
-                          <p className='text-sm'>{status === 'inProgress' ? "In Progress" : Capitalize(status)}</p>
-                        </div>
-                      </div>
-                      {openStatusSubmenu && (
-                        <div className='absolute w-full top-[50px] shadow-sm bg-white px-1 py-2 flex flex-col gap-1 rounded-lg'>
-                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'new' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('new')}>
-                            <div className='h-3 w-1 bg-sky-500 rounded-full'></div>
-                            <p>New</p>
-                          </div>
-                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'inProgress' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('inProgress')}>
-                            <div className='h-3 w-1 bg-orange-500 rounded-full'></div>
-                            <p>In Progress</p>
-                          </div>
-                          <div className={`flex items-center gap-2 hover:bg-gray-200 px-2 py-1 hover:rounded-lg ${status === 'done' && 'bg-gray-200 rounded-lg'}`} onClick={() => handleMoveTo('done')}>
-                            <div className='h-3 w-1 bg-indigo-500 rounded-full'></div>
-                            <p>Done</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Issue type */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <GoIssueTrackedBy />
-                      Issue type
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    <p className='w-full border-t-1 border-gray-200 pt-2 text-sm'>Contrast issue</p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="flex gap-2 w-full">
-                  <div className='min-w-32 mt-6'>
-                    <label htmlFor="assignee" className="flex items-center text-gray-500 text-sm gap-3">
-                      <MdOutlineDescription />
-                      Description
-                    </label>
-                  </div>
-                  <div className='pt-2 mt-2 grow-1'>
-                    <textarea 
-                      name="description" 
-                      id="description" 
-                      className='w-full border-t-1 border-gray-200 pt-2 text-sm' 
-                      rows={3}
-                      defaultValue="Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
-                      Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an 
-                      unknown printer took a galley of type and scrambled it to make a type specimen book. 
-                      It has survived not only five centuries, but also the leap into electronic typesetting, 
-                      remaining essentially unchanged. It was popularised in the 1960s with the release of 
-                      Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing 
-                      software like Aldus PageMaker including versions of Lorem Ipsum."
-                    > 
-                    </textarea>
-                  </div>
-                </div>
-
-                {/* Comments */}
-                <div className='pt-8 mt-8 border-t-1 border-gray-200'>
-                  <div>
-                  <ul className='mb-4 space-y-2'>{renderComments(comments, id)}</ul>
-                  </div>
-                </div>
-
-
-                {/* Comment Input */}
-                <div className='mt-auto py-2 px-8'>
-                  {replyToId && (
-                    <div className='mb-2 p-2 rounded-md bg-blue-50 text-blue-900 relative'>
-                      Replying to comment {replyToId}
-                      <button aria-label='Cancel Reply' onClick={handleCancelReply} className='absolute top-1 right-1 text-gray-500 hover:text-gray-900'>
-                        ×
+            {/* Comments list */}
+            <div className="mb-4 space-y-4">
+              {comments?.map((comment) => { 
+                
+                return(
+                <div key={comment.id}>
+                  <CommentItem comment={comment} onReply={setReplyToId} />
+                  {replyToId === comment.id && (
+                    <div className="mt-3 ml-11 flex gap-2">
+                      <input
+                      id="reply"
+                        type="text"
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        placeholder="Write a reply..."
+                        className="flex-1 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleReply(comment.id);
+                          } else if (e.key === 'Escape') {
+                            setReplyToId(null);
+                            setReplyContent('');
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => handleReply(comment.id)}
+                        disabled={!replyContent.trim()}
+                        className="rounded-lg bg-indigo-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Reply
+                      </button>
+                      <button
+                        onClick={() => {
+                          setReplyToId(null);
+                          setReplyContent('');
+                        }}
+                        className="rounded-lg border border-white/8 px-3 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/8"
+                      >
+                        Cancel
                       </button>
                     </div>
                   )}
-                  </div>
+                </div>
+              )})}
+            </div>
 
+            {/* Add comment */}
+            <div className="flex gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-emerald-500 to-teal-600 text-xs">
+                {getInitials(user!.name)}
               </div>
-          </div>
-
-          <div className='mt-auto py-2 px-8 border-t-1 border-gray-200'>
-            {fileNames.length > 0 && (
-              <div className='flex items-center flex-wrap py-2 gap-2'>
-                {fileNames.map((fileName, idx) => (
-                  <div className='flex items-center gap-2 border-1 border-gray-200 px-1.5 py-1.5 rounded-xl' key={idx}>
-                    <IoDocumentAttachOutline />
-                    <p className='text-sm'>{fileName}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-3.5">
-              <div className='mt-2.5 shrink-0'>
-                <Avatar initial='R' />
-              </div>
-              <div className='grow-1'>
-                <div className="relative">
-                  <textarea 
-                  name="comment" 
-                  id="comment" 
-                  className='h-11 text-sm leading-4 py-3 pr-28 rounded-lg overflow-y-auto resize-none w-full block max-h-36 text-black focus-visible:outline-0'
-                  placeholder="Message..."
-                  rows={1}
+              <div className="flex-1">
+                <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  >
-                  </textarea>
-                  <div className='absolute z-10 top-3 right-0'>
-                    <div className="flex items-center gap-2.5">
-                      <form className='flex'>
-                        <button className='cursor-pointer' onClick={handleButtonClick}>
-                          <RiAttachment2 />
-                          <span className='sr-only'>Attach file</span>
-                        </button>
-                        <input ref={inputRef} type='file' hidden onChange={handleFileUpload} />
-                        <ToastContainer 
-                          position="bottom-right"
-                          pauseOnFocusLoss
-                          draggable
-                          pauseOnHover
-                        />
-                      </form>
-                      <button className='cursor-pointer'>
-                        <MdOutlineEmojiEmotions />
-                        <span className='sr-only'>Add emoji</span>
-                      </button>
-                      <button className='cursor-pointer'>
-                        <MdOutlineKeyboardVoice />
-                        <span className='sr-only'>Send voice message</span>
-                      </button>
-                      <button 
-                        className='cursor-pointer inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white'
-                        disabled={!newComment.trim()}
-                        onClick={handleAddComment}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Add a comment... (⌘+Enter to send)"
+                  className="w-full resize-none rounded-lg border border-white/8 bg-[#222] px-3 py-2 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
+                  rows={3}
+                />
+
+                {/* Attachments */}
+                {filePreviews.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {filePreviews.map((attachment) => {
+                      return (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-2.5 py-1.5"
                       >
-                        <MdSend className='-rotate-90' size={12} />
-                        <span className='sr-only'>Send Comment</span>
-                      </button>
-                    </div>
+                        <File className="h-3.5 w-3.5 text-white/40" />
+                        <span className="text-xs text-white/70">{attachment.name}</span>
+                        <button
+                          onClick={() => handleRemoveAttachment(attachment.id)}
+                          className="text-white/40 hover:text-white/60"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )})}
                   </div>
+                )}
+                
+                <div className="mt-2 flex items-center justify-between">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/8 hover:text-white/60"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                    Attach files
+                  </button>
+                  <button
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    Send
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+    </>
+    
+  );
+}

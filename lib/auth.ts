@@ -9,18 +9,14 @@ export const getToken = () => {
 };
 
 export const setToken = (token: string) => {
-  Cookies.set(TOKEN_KEY, token, { path: '/', secure: true, sameSite: 'strict' });
+  Cookies.set(TOKEN_KEY, token, { 
+    path: '/', 
+    secure: true, 
+    sameSite: 'strict',
+    expires: 7 
+  });
 };
 
 export const clearToken = () => {
   Cookies.remove(TOKEN_KEY, { path: '/' });
-};
-
-export const useLogout = () => {
-  const router = useRouter();
-
-  return () => {
-    clearToken();
-    router.push('/login');
-  };
 };

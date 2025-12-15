@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { setToken } from '@/lib/auth';
+import { useUser } from '@/context/UserContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { refreshUser } = useUser();
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function LoginPage() {
 
     if (res.ok) {
       setToken(data.token);
+      await refreshUser(); 
       router.push('/reports');
     } else {
       alert(data.error || 'Login failed');

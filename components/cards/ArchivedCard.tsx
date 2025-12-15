@@ -53,8 +53,6 @@ export default function ArchivedSiteList() {
     fetchSites();
   }, []);
 
-  console.log(sites);
-
   async function toggleSiteArchive(id: string, shouldArchive: boolean) {
     const res = await fetch(`http://127.0.0.1:4000/api/site/${id}/archive`, {
       method: 'PATCH',

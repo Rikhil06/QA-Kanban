@@ -6,17 +6,10 @@ import { formatTimeAgo } from '@/utils/formatTimeAgo';
 import Link from 'next/link';
 import slugify from 'slugify';
 import { getToken } from '@/lib/auth';
-import router from 'next/router';
 
 import { BsThreeDotsVertical } from "react-icons/bs";
-
-type Site = {
-  site: string;
-  id: string;
-  siteName: string;
-  count: number;
-  lastUpdated: string | Date;
-};
+import { fetchSites } from '@/lib/fetchSites';
+import { Site } from '@/types/types';
 
 const token = getToken();
 
@@ -29,27 +22,15 @@ export default function SiteList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [archiveDropdownOpen, setArchiveDropdownOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const res = await fetch('http://127.0.0.1:4000/api/sites', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        setSites(data);
-      } catch (err) {
-        console.error('Failed to fetch sites:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const getSites = async () => {
+    const data = await fetchSites(token);
+    setSites(data);
+    setLoading(false);
+  };
 
-    fetchSites();
-  }, []);
-
-  console.log(sites);
+  getSites();
+}, []);
 
   async function toggleSiteArchive(id: string, shouldArchive: boolean) {
     const res = await fetch(`http://127.0.0.1:4000/api/site/${id}/archive`, {
