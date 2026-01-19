@@ -7,12 +7,12 @@ import Link from 'next/link';
 import useSWR from 'swr';
 
 interface Invoice {
-  id: string;              // Stripe invoice ID
-  number: string | null;   // Invoice number, can be null if not yet generated
-  amount_due: number;      // In cents
-  created: number;         // Unix timestamp (seconds)
+  id: string; // Stripe invoice ID
+  number: string | null; // Invoice number, can be null if not yet generated
+  amount_due: number; // In cents
+  created: number; // Unix timestamp (seconds)
   status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'; // Stripe invoice status
-  invoice_pdf: string;     // URL to download PDF
+  invoice_pdf: string; // URL to download PDF
 }
 
 export function PaymentSection() {
@@ -29,17 +29,17 @@ export function PaymentSection() {
       : null,
     async ([, subId, token]) => {
       const [invoices, cardDetails] = await Promise.all([
-        fetcher('https://qa-backend-105l.onrender.com /api/invoices', token),
+        fetcher('https://qa-backend-105l.onrender.com/api/invoices', token),
         fetcher(
-          `https://qa-backend-105l.onrender.com /billing/card/subscription/${subId}`,
-          token
+          `https://qa-backend-105l.onrender.com/billing/card/subscription/${subId}`,
+          token,
         ),
       ]);
 
       return { invoices, cardDetails };
-    }
+    },
   );
-    
+
   // const invoices = [
   //   { id: 'INV-2024-12', date: 'Dec 21, 2024', amount: '£12.00', status: 'Paid' },
   //   { id: 'INV-2024-11', date: 'Nov 21, 2024', amount: '£12.00', status: 'Paid' },
@@ -66,8 +66,12 @@ export function PaymentSection() {
             <CreditCard className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-white">•••• •••• •••• {data?.cardDetails.last4}</p>
-            <p className="text-xs text-white/50">Expires {data?.cardDetails.exp_month}/{data?.cardDetails.exp_year}</p>
+            <p className="text-sm text-white">
+              •••• •••• •••• {data?.cardDetails.last4}
+            </p>
+            <p className="text-xs text-white/50">
+              Expires {data?.cardDetails.exp_month}/{data?.cardDetails.exp_year}
+            </p>
           </div>
           <div className="px-2 py-1 rounded bg-[#2C2C2C] text-xs text-white/60">
             {Capitalize(data?.cardDetails.brand)}
@@ -100,16 +104,27 @@ export function PaymentSection() {
             >
               <div className="flex-1">
                 <p className="text-sm text-white">{invoice.number}</p>
-                <p className="text-xs text-white/50">{new Date(invoice.created * 1000).toLocaleDateString('en-GB', { month: 'short', day: 'numeric',  year: 'numeric' })}</p>
+                <p className="text-xs text-white/50">
+                  {new Date(invoice.created * 1000).toLocaleDateString(
+                    'en-GB',
+                    { month: 'short', day: 'numeric', year: 'numeric' },
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-sm text-white">{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', }).format(invoice.amount_due / 100)}</p>
+                  <p className="text-sm text-white">
+                    {new Intl.NumberFormat('en-GB', {
+                      style: 'currency',
+                      currency: 'GBP',
+                    }).format(invoice.amount_due / 100)}
+                  </p>
                   <p className="text-xs text-green-400">{invoice.status}</p>
                 </div>
-                <Link 
-                  className="p-2 rounded-lg bg-[#2C2C2C] hover:bg-[#333] transition-colors" 
-                  href={invoice.invoice_pdf} target="_blank"
+                <Link
+                  className="p-2 rounded-lg bg-[#2C2C2C] hover:bg-[#333] transition-colors"
+                  href={invoice.invoice_pdf}
+                  target="_blank"
                   rel="noopener noreferrer"
                 >
                   <Download className="w-4 h-4 text-white/60" />

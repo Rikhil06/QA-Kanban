@@ -6,11 +6,14 @@ export async function fetchOpenIssues(
   token: string | null,
 ): Promise<OpenIssuesResponse> {
   try {
-    const res = await fetch('https://qa-backend-105l.onrender.com /api/stats/open-issues', {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      'https://qa-backend-105l.onrender.com/api/stats/open-issues',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!res.ok) {
       throw new Error('Failed to fetch open issues');

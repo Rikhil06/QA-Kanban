@@ -11,21 +11,28 @@ type Issue = {
   color: string;
 };
 
-
 export function IssueStatusChart() {
-    const token = getToken();
-    const { data: issuesSummary, isLoading } = useSWR(token ? ['https://qa-backend-105l.onrender.com /api/stats/issues-summary', token] : null, ([url, token]) => fetcher(url, token));
-    
-    if (isLoading) return <p className="text-white">Loading...</p>;
-    const total = issuesSummary.reduce((sum: number, item: Issue) => sum + item.value, 0);
-    
+  const token = getToken();
+  const { data: issuesSummary, isLoading } = useSWR(
+    token
+      ? ['https://qa-backend-105l.onrender.com/api/stats/issues-summary', token]
+      : null,
+    ([url, token]) => fetcher(url, token),
+  );
+
+  if (isLoading) return <p className="text-white">Loading...</p>;
+  const total = issuesSummary.reduce(
+    (sum: number, item: Issue) => sum + item.value,
+    0,
+  );
+
   return (
     <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="mb-6">
         <h2 className="text-white mb-1">Issue Status</h2>
         <p className="text-sm text-gray-500">{total} total issues</p>
       </div>
-      
+
       <div className="relative h-48 mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -44,7 +51,7 @@ export function IssueStatusChart() {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        
+
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
             <div className="text-2xl text-white">{total}</div>
@@ -52,7 +59,7 @@ export function IssueStatusChart() {
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         {issuesSummary.map((item: StatusData) => (
           <div key={item.name} className="flex items-center justify-between">

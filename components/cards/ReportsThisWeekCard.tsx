@@ -2,14 +2,14 @@
 
 import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
-import { TbReportSearch } from "react-icons/tb";
+import { TbReportSearch } from 'react-icons/tb';
 
 export default function ReportsThisWeekCard() {
   const [count, setCount] = useState<number | null>(null);
   const token = getToken();
 
   useEffect(() => {
-    fetch('https://qa-backend-105l.onrender.com /api/stats/reports-this-week', {
+    fetch('https://qa-backend-105l.onrender.com/api/stats/reports-this-week', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -1,20 +1,22 @@
 import { toast } from 'react-toastify';
 
 export async function deleteReport(reportId: string): Promise<void> {
-    try {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${reportId}`, {
+  try {
+    const res = await fetch(
+      `https://qa-backend-105l.onrender.com/api/report/${reportId}`,
+      {
         method: 'DELETE',
-      });
-  
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to delete report');
-      }
-  
-      toast.success(`Report ${reportId} deleted successfully!`)
-    } catch (error) {
-      toast.error(`Error deleting report: ${reportId}`);
-      throw error;
+      },
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to delete report');
     }
+
+    toast.success(`Report ${reportId} deleted successfully!`);
+  } catch (error) {
+    toast.error(`Error deleting report: ${reportId}`);
+    throw error;
+  }
 }
-  

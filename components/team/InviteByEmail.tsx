@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 
 interface InviteByEmailProps {
   teamId: string | undefined;
-//   onInvite: (email: string, role: 'Admin' | 'Member') => void;
+  //   onInvite: (email: string, role: 'Admin' | 'Member') => void;
 }
 
 export function InviteByEmail({ teamId }: InviteByEmailProps) {
@@ -22,44 +22,45 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try{
-        setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-        if (!validateEmail(email)) {
+      if (!validateEmail(email)) {
         setIsValid(false);
         return;
-        }
+      }
 
-        const res = await fetch(`https://qa-backend-105l.onrender.com /teams/${teamId}/invite-email`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                Authorization: `Bearer ${token}` 
-            },
-            body: JSON.stringify({ teamId, email, role }),
-        })
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/teams/${teamId}/invite-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ teamId, email, role }),
+        },
+      );
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if(res.ok){
-            setIsLoading(false);
-            toast.success(`Invite sent to ${email}`);
-            setShowSuccess(true);
-            setIsValid(true);
-            setEmail('');
-        } else {
-            alert(data.error);
-            setIsLoading(false);
-            toast.error(`Invite failed to send to ${email}`);
-            setShowSuccess(false);
-            setIsValid(false);
-        }
-    } catch(err){
-        console.error(err);
+      if (res.ok) {
+        setIsLoading(false);
+        toast.success(`Invite sent to ${email}`);
+        setShowSuccess(true);
+        setIsValid(true);
+        setEmail('');
+      } else {
+        alert(data.error);
+        setIsLoading(false);
+        toast.error(`Invite failed to send to ${email}`);
+        setShowSuccess(false);
+        setIsValid(false);
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +95,9 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
             } rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors`}
           />
           {!isValid && (
-            <p className="text-xs text-red-400/80 mt-2">Please enter a valid email address</p>
+            <p className="text-xs text-red-400/80 mt-2">
+              Please enter a valid email address
+            </p>
           )}
         </div>
 

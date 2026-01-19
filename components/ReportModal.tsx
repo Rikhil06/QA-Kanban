@@ -1,14 +1,42 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-  import Image from 'next/image';
-import { X, Bug, Sparkles, CheckSquare, MessageSquare, Send, ChevronDown, Edit2, Paperclip, File, ChevronDownIcon, Calendar, MoreVertical, Trash2 } from 'lucide-react';
-import { ReportModalProps, Report, Site, ColumnId, Priority, Comment, Attachment } from '@/types/types';
+import Image from 'next/image';
+import {
+  X,
+  Bug,
+  Sparkles,
+  CheckSquare,
+  MessageSquare,
+  Send,
+  ChevronDown,
+  Edit2,
+  Paperclip,
+  File,
+  ChevronDownIcon,
+  Calendar,
+  MoreVertical,
+  Trash2,
+} from 'lucide-react';
+import {
+  ReportModalProps,
+  Report,
+  Site,
+  ColumnId,
+  Priority,
+  Comment,
+  Attachment,
+} from '@/types/types';
 import { getToken } from '@/lib/auth';
 import { usePathname } from 'next/navigation';
-import { Capitalize, getInitials, getPriorityColor, timeAgo } from '@/utils/helpers';
+import {
+  Capitalize,
+  getInitials,
+  getPriorityColor,
+  timeAgo,
+} from '@/utils/helpers';
 import { toast } from 'react-toastify';
-import Zoom from 'react-medium-image-zoom'
+import Zoom from 'react-medium-image-zoom';
 import CommentItem from './comment/CommentItem';
 import { useUser } from '@/context/UserContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -20,8 +48,12 @@ import { deleteReport } from '@/utils/deleteReport';
 // const priorityOptions: Issue['priority'][] = ['low', 'medium', 'high', 'urgent'];
 // const typeOptions: Issue['type'][] = ['bug', 'feature', 'task'];
 
-  export default function ReportModal({ id, onClose, onDeleteSuccess, onMoveSuccess }: ReportModalProps) {
-
+export default function ReportModal({
+  id,
+  onClose,
+  onDeleteSuccess,
+  onMoveSuccess,
+}: ReportModalProps) {
   const { user, loading } = useUser();
   const token = getToken();
   const pathname = usePathname();
@@ -30,7 +62,7 @@ import { deleteReport } from '@/utils/deleteReport';
   const [status, setStatus] = useState<string>('');
   const [priority, setPriority] = useState<string>('');
   const [users, setUsers] = useState<Site[]>([]);
-  
+
   const [comments, setComments] = useState<Comment[]>();
   const [newComment, setNewComment] = useState('');
   const [replyToId, setReplyToId] = useState<string | null>(null);
@@ -46,10 +78,14 @@ import { deleteReport } from '@/utils/deleteReport';
 
   useEffect(() => {
     const fetchReport = async () => {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}`, {
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}`,
+        {
           headers: {
-        Authorization: `Bearer ${token}`,
-      }});
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
       if (!res.ok) return;
       const data = await res.json();
       setReport(data);
@@ -58,47 +94,56 @@ import { deleteReport } from '@/utils/deleteReport';
     fetchReport();
 
     const fetchComments = async () => {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/reports/${id}/comments`);
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+      );
       if (!res.ok) return;
       const data = await res.json();
       setComments(data);
     };
     fetchComments();
 
-    const fetchStatus= async () => {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/status`, {
+    const fetchStatus = async () => {
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}/status`,
+        {
           headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      });
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
       if (!res.ok) return;
       const data = await res.json();
       setStatus(data.status);
     };
     fetchStatus();
 
-    const fetchPriority= async () => {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/priority`);
+    const fetchPriority = async () => {
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}/priority`,
+      );
       if (!res.ok) return;
       const data = await res.json();
       setPriority(data.priority);
     };
-    fetchPriority();         
+    fetchPriority();
   }, [id]);
 
   useEffect(() => {
-    const siteId = pathname?.split("/").pop();
+    const siteId = pathname?.split('/').pop();
 
     if (!siteId) return;
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`https://qa-backend-105l.onrender.com /api/site/${siteId}/users`);
+        const res = await fetch(
+          `https://qa-backend-105l.onrender.com/api/site/${siteId}/users`,
+        );
         if (!res.ok) return;
         const data = await res.json();
         setUsers(data);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error('Error fetching users:', error);
       }
     };
 
@@ -106,16 +151,21 @@ import { deleteReport } from '@/utils/deleteReport';
   }, [pathname]);
 
   const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
-
     try {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
-        body: JSON.stringify({ status: newStatus }),
-      });
-  
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+
       if (!res.ok) throw new Error('Failed to move report');
-  
+
       const updated = await res.json();
       setStatus(updated.status);
       toast.success(`Moved to ${Capitalize(updated.status)}!`);
@@ -127,23 +177,31 @@ import { deleteReport } from '@/utils/deleteReport';
       if (shouldClose) {
         onClose();
       }
-
     } catch (error) {
       console.error(error);
-      toast.error("Failed to move report");
+      toast.error('Failed to move report');
     }
   };
 
-  const handlePriorityChange = async (newStatus: Priority, shouldClose = false) => {
+  const handlePriorityChange = async (
+    newStatus: Priority,
+    shouldClose = false,
+  ) => {
     try {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/priority`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
-        body: JSON.stringify({ priority: newStatus }),
-      });
-  
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}/priority`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ priority: newStatus }),
+        },
+      );
+
       if (!res.ok) throw new Error('Failed to update status');
-  
+
       const updated = await res.json();
       setPriority(updated.priority);
       setOpenDropdown(null);
@@ -152,35 +210,41 @@ import { deleteReport } from '@/utils/deleteReport';
       if (shouldClose) {
         onClose();
       }
-
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update status"); 
+      toast.error('Failed to update status');
     }
   };
 
   const handleDueDate = async (date: Date | undefined) => {
     try {
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/due-date`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
-        body: JSON.stringify({ dueDate: date?.toISOString().split('T')[0] }),
-      });
-  
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/report/${id}/due-date`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ dueDate: date?.toISOString().split('T')[0] }),
+        },
+      );
+
       if (!res.ok) throw new Error('Failed to update status');
-  
+
       const updated = await res.json();
       toast.success(`Moved to ${Capitalize(updated.priority)}!`);
 
-      if(res.ok){
+      if (res.ok) {
         setDate(date);
-        setOpen(false)
-        setReport(prev => prev ? { ...prev, dueDate: date?.toISOString().split("T")[0] } : prev);
+        setOpen(false);
+        setReport((prev) =>
+          prev ? { ...prev, dueDate: date?.toISOString().split('T')[0] } : prev,
+        );
       }
-
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update status");
+      toast.error('Failed to update status');
     }
   };
 
@@ -198,7 +262,7 @@ import { deleteReport } from '@/utils/deleteReport';
 
   const handleAddComment = async () => {
     if (newComment.trim().length === 0) return;
-      
+
     try {
       const payload = {
         reportId: id, // from props or state - the current report id
@@ -208,29 +272,31 @@ import { deleteReport } from '@/utils/deleteReport';
       };
 
       const formData = new FormData();
-      
+
       Object.entries(payload).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formData.append(key, String(value));
-      }
-    });
+        if (value !== null && value !== undefined) {
+          formData.append(key, String(value));
+        }
+      });
 
       fileNames.forEach((file) => {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`https://qa-backend-105l.onrender.com /api/reports/${id}/comments`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`},
-        body: formData,
-      });
-
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        },
+      );
 
       if (!res.ok) {
         throw new Error('Failed to save comment');
       }
       const savedComment = await res.json();
-      
+
       setComments((prev: any) => [...prev, savedComment]);
       setNewComment('');
       setReplyToId(null);
@@ -238,7 +304,7 @@ import { deleteReport } from '@/utils/deleteReport';
       setFilePreviews([]);
     } catch (error) {
       console.error(error);
-      toast.error("Error saving comment");
+      toast.error('Error saving comment');
     }
   };
 
@@ -260,47 +326,47 @@ import { deleteReport } from '@/utils/deleteReport';
   };
 
   const handleReply = async (parentId: string) => {
-  if (!replyContent.trim()) return;
+    if (!replyContent.trim()) return;
 
-  try {
-    const res = await fetch(
-      `https://qa-backend-105l.onrender.com /api/reports/${id}/comments`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+    try {
+      const res = await fetch(
+        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            content: replyContent.trim(),
+            parentId, // 👈 this makes it a reply
+          }),
         },
-        body: JSON.stringify({
-          content: replyContent.trim(),
-          parentId, // 👈 this makes it a reply
-        }),
-      }
-    );
+      );
 
-    if (!res.ok) throw new Error('Failed to save reply');
+      if (!res.ok) throw new Error('Failed to save reply');
 
-    const savedReply = await res.json();
+      const savedReply = await res.json();
 
-    // update UI
-    setComments((prev: any) =>
-      prev.map((comment: any) =>
-        comment.id === parentId
-          ? {
-              ...comment,
-              replies: [...(comment.replies || []), savedReply],
-            }
-          : comment
-      )
-    );
+      // update UI
+      setComments((prev: any) =>
+        prev.map((comment: any) =>
+          comment.id === parentId
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), savedReply],
+              }
+            : comment,
+        ),
+      );
 
-    setReplyContent('');
-    setReplyToId(null);
-  } catch (err) {
-    console.error(err);
-    toast.error('Failed to save reply');
-  }
-};
+      setReplyContent('');
+      setReplyToId(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save reply');
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -313,7 +379,7 @@ import { deleteReport } from '@/utils/deleteReport';
       name: file.name,
       size: file.size,
       type: file.type,
-      url: `/uploads/${file.name}`
+      url: `/uploads/${file.name}`,
     }));
 
     setFileNames((prev) => [...prev, ...newFiles]);
@@ -324,9 +390,10 @@ import { deleteReport } from '@/utils/deleteReport';
     setFilePreviews(filePreviews.filter((a) => a.id !== id));
   };
 
-  const totalComments = comments?.reduce((total, comment) => {
-    return total + 1 + (comment.replies?.length || 0);
-  }, 0) ?? 0;
+  const totalComments =
+    comments?.reduce((total, comment) => {
+      return total + 1 + (comment.replies?.length || 0);
+    }, 0) ?? 0;
 
   if (!report) return null;
   if (loading) return null;
@@ -350,37 +417,42 @@ import { deleteReport } from '@/utils/deleteReport';
           <div className="flex items-center gap-1">
             <div className="relative">
               <button
-                onClick={() => setOpenDropdown(openDropdown === 'more' ? null : 'more')}
+                onClick={() =>
+                  setOpenDropdown(openDropdown === 'more' ? null : 'more')
+                }
                 className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60"
               >
                 <MoreVertical className="h-5 w-5" />
               </button>
 
-                {openDropdown === 'more' && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
-                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] p-1 shadow-2xl">
-                      <button
-                        onClick={() => {
-                          deleteReport(report.id);
-                          onClose();
-                        }}
-                        className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Issue
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              {openDropdown === 'more' && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setOpenDropdown(null)}
+                  />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] p-1 shadow-2xl">
+                    <button
+                      onClick={() => {
+                        deleteReport(report.id);
+                        onClose();
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Issue
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
-              <button
-                onClick={onClose}
-                className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60 cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
@@ -389,16 +461,15 @@ import { deleteReport } from '@/utils/deleteReport';
           {/* Screenshot */}
           <div className="border-b border-white/8 p-6">
             <div className="overflow-hidden rounded-lg border border-white/8 bg-[#222]">
-              <div className='relative h-64'>
+              <div className="relative h-64">
                 <Zoom zoomMargin={45}>
                   <Image
-                      src={report.imagePath}
-                      alt="Screenshot"
-                      fill
-                      className="object-cover rounded-2xl"
-                      unoptimized
-                      
-                    />
+                    src={report.imagePath}
+                    alt="Screenshot"
+                    fill
+                    className="object-cover rounded-2xl"
+                    unoptimized
+                  />
                 </Zoom>
               </div>
             </div>
@@ -408,22 +479,33 @@ import { deleteReport } from '@/utils/deleteReport';
           <div className="grid grid-cols-2 gap-4 border-b border-white/8 p-6">
             {/* Assignee */}
             <div>
-              <label className="mb-2 block text-xs text-white/40">Assignee</label>
+              <label className="mb-2 block text-xs text-white/40">
+                Assignee
+              </label>
               <div className="relative">
                 <button
-                  onClick={() => setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')}
+                  onClick={() =>
+                    setOpenDropdown(
+                      openDropdown === 'assignee' ? null : 'assignee',
+                    )
+                  }
                   className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
                     {getInitials(report?.userName)}
                   </div>
-                  <span className="text-sm text-white/80">{report?.userName}</span>
+                  <span className="text-sm text-white/80">
+                    {report?.userName}
+                  </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
                 {openDropdown === 'assignee' && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpenDropdown(null)}
+                    />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
                       {users.map((option) => (
                         <button
@@ -448,39 +530,50 @@ import { deleteReport } from '@/utils/deleteReport';
               <label className="mb-2 block text-xs text-white/40">Status</label>
               <div className="relative">
                 <button
-                  onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')}
+                  onClick={() =>
+                    setOpenDropdown(openDropdown === 'status' ? null : 'status')
+                  }
                   className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
-                  <div className={`h-2 w-2 rounded-full ${ (status === 'new') ? 'bg-sky-500' : ((status === 'inProgress') ? ('bg-orange-500') : 'bg-indigo-500')}`} />
-                  <span className="text-sm capitalize text-white/80">{status === 'inProgress' ? "In Progress" : Capitalize(status)}</span>
+                  <div
+                    className={`h-2 w-2 rounded-full ${status === 'new' ? 'bg-sky-500' : status === 'inProgress' ? 'bg-orange-500' : 'bg-indigo-500'}`}
+                  />
+                  <span className="text-sm capitalize text-white/80">
+                    {status === 'inProgress'
+                      ? 'In Progress'
+                      : Capitalize(status)}
+                  </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
                 {openDropdown === 'status' && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpenDropdown(null)}
+                    />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
-                        <button
-                          onClick={() => handleMoveTo('new')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className="h-2 w-2 rounded-full bg-sky-500" />
-                          <span className="capitalize">New</span>
-                        </button>
-                        <button
-                          onClick={() => handleMoveTo('inProgress')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className="h-2 w-2 rounded-full bg-orange-500" />
-                          <span className="capitalize">In Progress</span>
-                        </button>
-                        <button
-                          onClick={() => handleMoveTo('done')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className="h-2 w-2 rounded-full bg-indigo-500" />
-                          <span className="capitalize">Done</span>
-                        </button>
+                      <button
+                        onClick={() => handleMoveTo('new')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className="h-2 w-2 rounded-full bg-sky-500" />
+                        <span className="capitalize">New</span>
+                      </button>
+                      <button
+                        onClick={() => handleMoveTo('inProgress')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className="h-2 w-2 rounded-full bg-orange-500" />
+                        <span className="capitalize">In Progress</span>
+                      </button>
+                      <button
+                        onClick={() => handleMoveTo('done')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className="h-2 w-2 rounded-full bg-indigo-500" />
+                        <span className="capitalize">Done</span>
+                      </button>
                     </div>
                   </>
                 )}
@@ -489,56 +582,69 @@ import { deleteReport } from '@/utils/deleteReport';
 
             {/* Priority */}
             <div>
-              <label className="mb-2 block text-xs text-white/40">Priority</label>
+              <label className="mb-2 block text-xs text-white/40">
+                Priority
+              </label>
               <div className="relative">
                 <button
-                  onClick={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
+                  onClick={() =>
+                    setOpenDropdown(
+                      openDropdown === 'priority' ? null : 'priority',
+                    )
+                  }
                   className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
-                  <div className={`h-2 w-2 rounded-full ${getPriorityColor(priority)}`} />
-                  <span className="text-sm capitalize text-white/80">{priority}</span>
+                  <div
+                    className={`h-2 w-2 rounded-full ${getPriorityColor(priority)}`}
+                  />
+                  <span className="text-sm capitalize text-white/80">
+                    {priority}
+                  </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
                 {openDropdown === 'priority' && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpenDropdown(null)}
+                    />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
-                        <button
-                          onClick={() => handlePriorityChange('not assigned')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className={`h-2 w-2 rounded-full bg-sky-500`} />
-                          <span className="capitalize">Not Assigned</span>
-                        </button>
-                        <button
-                          onClick={() => handlePriorityChange('low')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className={`h-2 w-2 rounded-full bg-green-500 `} />
-                          <span className="capitalize">Low</span>
-                        </button>
-                        <button
-                          onClick={() => handlePriorityChange('medium')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className={`h-2 w-2 rounded-full bg-orange-500`} />
-                          <span className="capitalize">Medium</span>
-                        </button>
-                        <button
-                          onClick={() => handlePriorityChange('high')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className={`h-2 w-2 rounded-full bg-red-500`} />
-                          <span className="capitalize">High</span>
-                        </button>
-                        <button
-                          onClick={() => handlePriorityChange('urgent')}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className={`h-2 w-2 rounded-full bg-red-600`} />
-                          <span className="capitalize">Urgent</span>
-                        </button>
+                      <button
+                        onClick={() => handlePriorityChange('not assigned')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className={`h-2 w-2 rounded-full bg-sky-500`} />
+                        <span className="capitalize">Not Assigned</span>
+                      </button>
+                      <button
+                        onClick={() => handlePriorityChange('low')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className={`h-2 w-2 rounded-full bg-green-500 `} />
+                        <span className="capitalize">Low</span>
+                      </button>
+                      <button
+                        onClick={() => handlePriorityChange('medium')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className={`h-2 w-2 rounded-full bg-orange-500`} />
+                        <span className="capitalize">Medium</span>
+                      </button>
+                      <button
+                        onClick={() => handlePriorityChange('high')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className={`h-2 w-2 rounded-full bg-red-500`} />
+                        <span className="capitalize">High</span>
+                      </button>
+                      <button
+                        onClick={() => handlePriorityChange('urgent')}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        <div className={`h-2 w-2 rounded-full bg-red-600`} />
+                        <span className="capitalize">Urgent</span>
+                      </button>
                     </div>
                   </>
                 )}
@@ -547,29 +653,38 @@ import { deleteReport } from '@/utils/deleteReport';
 
             {/* Issue Type */}
             <div>
-              <label className="mb-2 block text-xs text-white/40">Issue type</label>
+              <label className="mb-2 block text-xs text-white/40">
+                Issue type
+              </label>
               <div className="relative">
                 <button
-                  onClick={() => setOpenDropdown(openDropdown === 'type' ? null : 'type')}
+                  onClick={() =>
+                    setOpenDropdown(openDropdown === 'type' ? null : 'type')
+                  }
                   className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
                   {/* <Icon className="h-4 w-4 text-white/40" /> */}
-                  <span className="text-sm capitalize text-white/80">Contrast issue</span>
+                  <span className="text-sm capitalize text-white/80">
+                    Contrast issue
+                  </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
                 {openDropdown === 'type' && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpenDropdown(null)}
+                    />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
-                        {/* // const TypeIcon = typeIcons[option]; */}
-                          <button
-                            // onClick={() => handleUpdateField('type', option)}
-                            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                          >
-                            {/* <TypeIcon className="h-4 w-4 text-white/40" /> */}
-                            <span className="capitalize">Contrast issue</span>
-                          </button>
+                      {/* // const TypeIcon = typeIcons[option]; */}
+                      <button
+                        // onClick={() => handleUpdateField('type', option)}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                      >
+                        {/* <TypeIcon className="h-4 w-4 text-white/40" /> */}
+                        <span className="capitalize">Contrast issue</span>
+                      </button>
                     </div>
                   </>
                 )}
@@ -577,7 +692,9 @@ import { deleteReport } from '@/utils/deleteReport';
             </div>
 
             <div className="">
-              <label className="mb-2 block text-xs text-white/40">Due Date</label>
+              <label className="mb-2 block text-xs text-white/40">
+                Due Date
+              </label>
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -585,16 +702,21 @@ import { deleteReport } from '@/utils/deleteReport';
                     id="date"
                     className="w-48 justify-between font-normal"
                   >
-                    {report.dueDate ? new Date(report.dueDate).toLocaleDateString('en-GB') : "Select date"}
+                    {report.dueDate
+                      ? new Date(report.dueDate).toLocaleDateString('en-GB')
+                      : 'Select date'}
                     <ChevronDownIcon />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
                   <CalendarCN
                     mode="single"
                     selected={date}
                     captionLayout="dropdown"
-                    className='flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12 bg-none'
+                    className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12 bg-none"
                     onSelect={(date) => {
                       handleDueDate(date);
                     }}
@@ -605,10 +727,14 @@ import { deleteReport } from '@/utils/deleteReport';
 
             {/* Last Updated */}
             <div className="">
-              <label className="mb-2 block text-xs text-white/40">Last Updated</label>
+              <label className="mb-2 block text-xs text-white/40">
+                Last Updated
+              </label>
               <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
                 <Calendar className="h-4 w-4 text-white/40" />
-                <span className="text-sm text-white/80">{timeAgo(report.timestamp)}</span>
+                <span className="text-sm text-white/80">
+                  {timeAgo(report.timestamp)}
+                </span>
               </div>
             </div>
           </div>
@@ -670,49 +796,49 @@ import { deleteReport } from '@/utils/deleteReport';
 
             {/* Comments list */}
             <div className="mb-4 space-y-4">
-              {comments?.map((comment) => { 
-                
-                return(
-                <div key={comment.id}>
-                  <CommentItem comment={comment} onReply={setReplyToId} />
-                  {replyToId === comment.id && (
-                    <div className="mt-3 ml-11 flex gap-2">
-                      <input
-                      id="reply"
-                        type="text"
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        placeholder="Write a reply..."
-                        className="flex-1 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleReply(comment.id);
-                          } else if (e.key === 'Escape') {
+              {comments?.map((comment) => {
+                return (
+                  <div key={comment.id}>
+                    <CommentItem comment={comment} onReply={setReplyToId} />
+                    {replyToId === comment.id && (
+                      <div className="mt-3 ml-11 flex gap-2">
+                        <input
+                          id="reply"
+                          type="text"
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder="Write a reply..."
+                          className="flex-1 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleReply(comment.id);
+                            } else if (e.key === 'Escape') {
+                              setReplyToId(null);
+                              setReplyContent('');
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleReply(comment.id)}
+                          disabled={!replyContent.trim()}
+                          className="rounded-lg bg-indigo-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Reply
+                        </button>
+                        <button
+                          onClick={() => {
                             setReplyToId(null);
                             setReplyContent('');
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => handleReply(comment.id)}
-                        disabled={!replyContent.trim()}
-                        className="rounded-lg bg-indigo-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Reply
-                      </button>
-                      <button
-                        onClick={() => {
-                          setReplyToId(null);
-                          setReplyContent('');
-                        }}
-                        className="rounded-lg border border-white/8 px-3 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/8"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )})}
+                          }}
+                          className="rounded-lg border border-white/8 px-3 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/8"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Add comment */}
@@ -735,23 +861,28 @@ import { deleteReport } from '@/utils/deleteReport';
                   <div className="mt-2 flex flex-wrap gap-2">
                     {filePreviews.map((attachment) => {
                       return (
-                      <div
-                        key={attachment.id}
-                        className="flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-2.5 py-1.5"
-                      >
-                        <File className="h-3.5 w-3.5 text-white/40" />
-                        <span className="text-xs text-white/70">{attachment.name}</span>
-                        <button
-                          onClick={() => handleRemoveAttachment(attachment.id)}
-                          className="text-white/40 hover:text-white/60"
+                        <div
+                          key={attachment.id}
+                          className="flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-2.5 py-1.5"
                         >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    )})}
+                          <File className="h-3.5 w-3.5 text-white/40" />
+                          <span className="text-xs text-white/70">
+                            {attachment.name}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleRemoveAttachment(attachment.id)
+                            }
+                            className="text-white/40 hover:text-white/60"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-                
+
                 <div className="mt-2 flex items-center justify-between">
                   <input
                     ref={fileInputRef}
@@ -782,6 +913,5 @@ import { deleteReport } from '@/utils/deleteReport';
         </div>
       </div>
     </>
-    
   );
 }

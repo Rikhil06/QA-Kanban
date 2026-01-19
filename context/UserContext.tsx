@@ -3,14 +3,14 @@
 import { clearToken, getToken } from '@/lib/auth';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-interface Subscription{
-  plan: string,
-  interval: string,
-  status: string,
-  trialEndsAt: string,
-  currentPeriodEnd: string,
-  stripePriceId: string,
-  stripeSubscriptionId: string,
+interface Subscription {
+  plan: string;
+  interval: string;
+  status: string;
+  trialEndsAt: string;
+  currentPeriodEnd: string;
+  stripePriceId: string;
+  stripeSubscriptionId: string;
 }
 
 interface Team {
@@ -27,7 +27,7 @@ interface User {
   teamId: string;
   team: Team;
   role: string;
-  memberships?: []; 
+  memberships?: [];
 }
 
 interface UserContextType {
@@ -57,9 +57,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const res = await fetch('https://qa-backend-105l.onrender.com /api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        'https://qa-backend-105l.onrender.com/api/auth/me',
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!res.ok) throw new Error();
       const data = await res.json();
@@ -82,7 +85,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, loading, refreshUser: fetchUser, logout }}>
+    <UserContext.Provider
+      value={{ user, loading, refreshUser: fetchUser, logout }}
+    >
       {children}
     </UserContext.Provider>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Upload, X } from 'lucide-react';
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/auth';
 
 interface CreateTeamCardProps {
@@ -10,11 +10,11 @@ interface CreateTeamCardProps {
   onReset: () => void;
 }
 
-export function CreateTeamCard({ 
-  isSelected, 
-  isOtherSelected, 
-  onSelect, 
-  onReset 
+export function CreateTeamCard({
+  isSelected,
+  isOtherSelected,
+  onSelect,
+  onReset,
 }: CreateTeamCardProps) {
   const router = useRouter();
   const [teamName, setTeamName] = useState('');
@@ -42,31 +42,34 @@ export function CreateTeamCard({
 
     try {
       const formData = new FormData();
-      formData.append("name", teamName);
-      if (logoFile) formData.append("logo", logoFile);
-      formData.append("plan", planType);
+      formData.append('name', teamName);
+      if (logoFile) formData.append('logo', logoFile);
+      formData.append('plan', planType);
 
-      const res = await fetch("https://qa-backend-105l.onrender.com /teams/create", {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        'https://qa-backend-105l.onrender.com/teams/create',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          method: 'POST',
+          body: formData,
         },
-        method: "POST",
-        body: formData,
-      });
+      );
 
       const data = await res.json();
 
       if (res.ok) {
         setIsLoading(false);
-        router.push("/");
+        router.push('/');
       } else {
         setIsLoading(false);
-        alert(data.error || "Failed to create team");
+        alert(data.error || 'Failed to create team');
       }
     } catch (err) {
       console.error(err);
       setIsLoading(false);
-      alert("Something went wrong");
+      alert('Something went wrong');
     }
   };
 
@@ -79,9 +82,10 @@ export function CreateTeamCard({
       onClick={!isSelected ? onSelect : undefined}
       className={`
         relative bg-[#1A1A1A]/60 backdrop-blur-sm rounded-xl border transition-all duration-300
-        ${isSelected 
-          ? 'border-[#4A9EFF]/60 shadow-[0_0_30px_rgba(74,158,255,0.15)]' 
-          : 'border-[#2A2A2A] hover:border-[#4A9EFF]/40 hover:shadow-[0_0_20px_rgba(74,158,255,0.08)] cursor-pointer'
+        ${
+          isSelected
+            ? 'border-[#4A9EFF]/60 shadow-[0_0_30px_rgba(74,158,255,0.15)]'
+            : 'border-[#2A2A2A] hover:border-[#4A9EFF]/40 hover:shadow-[0_0_20px_rgba(74,158,255,0.08)] cursor-pointer'
         }
       `}
     >
@@ -139,12 +143,16 @@ export function CreateTeamCard({
                 {/* Logo Preview Circle */}
                 <div className="relative w-16 h-16 rounded-full bg-[#0E0E0E] border-2 border-dashed border-[#2A2A2A] flex items-center justify-center overflow-hidden">
                   {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Upload size={20} className="text-[#666]" />
                   )}
                 </div>
-                
+
                 {/* Upload Button */}
                 <label className="px-4 py-2 bg-[#2A2A2A] hover:bg-[#333] border border-[#3A3A3A] rounded-lg text-[#E6E6E6] text-sm cursor-pointer transition-colors">
                   Choose File
@@ -155,7 +163,7 @@ export function CreateTeamCard({
                     className="hidden"
                   />
                 </label>
-                
+
                 {logoFile && (
                   <span className="text-[#A6A6A6] text-sm truncate max-w-[200px]">
                     {logoFile.name}
@@ -173,7 +181,7 @@ export function CreateTeamCard({
                 {[
                   { value: 'free', label: 'Free' },
                   { value: 'trial', label: 'Trial' },
-                  { value: 'paid', label: 'Paid' }
+                  { value: 'paid', label: 'Paid' },
                 ].map((plan) => (
                   <button
                     key={plan.value}
@@ -181,9 +189,10 @@ export function CreateTeamCard({
                     onClick={() => setPlanType(plan.value as any)}
                     className={`
                       px-4 py-3 rounded-lg text-sm transition-all
-                      ${planType === plan.value
-                        ? 'bg-[#4A9EFF] text-white'
-                        : 'bg-[#0E0E0E] text-[#A6A6A6] border border-[#2A2A2A] hover:border-[#4A9EFF]/40'
+                      ${
+                        planType === plan.value
+                          ? 'bg-[#4A9EFF] text-white'
+                          : 'bg-[#0E0E0E] text-[#A6A6A6] border border-[#2A2A2A] hover:border-[#4A9EFF]/40'
                       }
                     `}
                   >

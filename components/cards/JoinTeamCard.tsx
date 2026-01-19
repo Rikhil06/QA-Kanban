@@ -12,11 +12,11 @@ interface JoinTeamCardProps {
   onReset: () => void;
 }
 
-export function JoinTeamCard({ 
-  isSelected, 
-  isOtherSelected, 
-  onSelect, 
-  onReset 
+export function JoinTeamCard({
+  isSelected,
+  isOtherSelected,
+  onSelect,
+  onReset,
 }: JoinTeamCardProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,37 +30,39 @@ export function JoinTeamCard({
     setError(null);
 
     try {
+      const isValidCode = inviteCode.length > 6 && inviteCode.includes('-');
 
-    const isValidCode = inviteCode.length > 6 && inviteCode.includes('-');
-    
-    if (!isValidCode) {
-      setError('Invite link or code not found — please check and try again.');
-      setIsSubmitting(false);
-      return;
-    }
+      if (!isValidCode) {
+        setError('Invite link or code not found — please check and try again.');
+        setIsSubmitting(false);
+        return;
+      }
 
-    const res = await fetch("https://qa-backend-105l.onrender.com /teams/join", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
+      const res = await fetch(
+        'https://qa-backend-105l.onrender.com/teams/join',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code: inviteCode }),
         },
-        body: JSON.stringify({ code: inviteCode }),
-    });
+      );
 
       const data = await res.json();
 
       if (res.ok) {
         setIsSubmitting(false);
-        router.push("/");
+        router.push('/');
       } else {
         setIsSubmitting(false);
-        alert(data.error || "Failed to create team");
+        alert(data.error || 'Failed to create team');
       }
     } catch (err) {
       console.error(err);
       setIsSubmitting(false);
-      alert("Something went wrong");
+      alert('Something went wrong');
     }
     setIsSubmitting(false);
   };
@@ -74,9 +76,10 @@ export function JoinTeamCard({
       onClick={!isSelected ? onSelect : undefined}
       className={`
         relative bg-[#1A1A1A]/60 backdrop-blur-sm rounded-xl border transition-all duration-300
-        ${isSelected 
-          ? 'border-[#4A9EFF]/60 shadow-[0_0_30px_rgba(74,158,255,0.15)]' 
-          : 'border-[#2A2A2A] hover:border-[#4A9EFF]/40 hover:shadow-[0_0_20px_rgba(74,158,255,0.08)] cursor-pointer'
+        ${
+          isSelected
+            ? 'border-[#4A9EFF]/60 shadow-[0_0_30px_rgba(74,158,255,0.15)]'
+            : 'border-[#2A2A2A] hover:border-[#4A9EFF]/40 hover:shadow-[0_0_20px_rgba(74,158,255,0.08)] cursor-pointer'
         }
       `}
     >
@@ -126,13 +129,14 @@ export function JoinTeamCard({
                 required
                 className={`
                   w-full px-4 py-3 bg-[#0E0E0E] border rounded-lg text-[#E6E6E6] placeholder-[#666] focus:outline-none transition-colors
-                  ${error 
-                    ? 'border-red-500 focus:border-red-500' 
-                    : 'border-[#2A2A2A] focus:border-[#4A9EFF]'
+                  ${
+                    error
+                      ? 'border-red-500 focus:border-red-500'
+                      : 'border-[#2A2A2A] focus:border-[#4A9EFF]'
                   }
                 `}
               />
-              
+
               {/* Error Message */}
               {error && (
                 <p className="mt-2 text-sm text-red-400 flex items-center gap-2">
@@ -145,7 +149,8 @@ export function JoinTeamCard({
             {/* Help Text */}
             <div className="p-4 bg-[#0E0E0E]/50 border border-[#2A2A2A] rounded-lg">
               <p className="text-[#A6A6A6] text-sm">
-                <span className="text-[#E6E6E6]">Need an invite?</span> Ask your team admin to send you an invite link or team code.
+                <span className="text-[#E6E6E6]">Need an invite?</span> Ask your
+                team admin to send you an invite link or team code.
               </p>
             </div>
 

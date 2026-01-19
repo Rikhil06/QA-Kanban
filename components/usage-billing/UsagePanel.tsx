@@ -14,39 +14,74 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
   const { user } = useUser();
   const { data, isLoading, error } = useSWR(
     token && user?.teamId && user?.team?.subscription?.stripeSubscriptionId
-      ? ['team-stats-and-billing', user.teamId, user.team.subscription.stripeSubscriptionId, token]
+      ? [
+          'team-stats-and-billing',
+          user.teamId,
+          user.team.subscription.stripeSubscriptionId,
+          token,
+        ]
       : null,
     async ([, teamId, subId, token]) => {
       const [stats, billingDate] = await Promise.all([
-        fetcher(`https://qa-backend-105l.onrender.com /api/team/${teamId}/stats`, token),
-        fetcher(`https://qa-backend-105l.onrender.com /billing/next-renewal/${subId}/`, token),
+        fetcher(
+          `https://qa-backend-105l.onrender.com/api/team/${teamId}/stats`,
+          token,
+        ),
+        fetcher(
+          `https://qa-backend-105l.onrender.com/billing/next-renewal/${subId}/`,
+          token,
+        ),
       ]);
 
       return { stats, billingDate };
-    }
+    },
   );
-  if (isLoading) return (
+  if (isLoading)
+    return (
       <div className={`flex items-center justify-center`}>
-      <Loader
-        size={48}
-        className={`animate-spin text-blue-500`}
-      />
-    </div>
-  );
+        <Loader size={48} className={`animate-spin text-blue-500`} />
+      </div>
+    );
   const usageData = {
-    screenshots: { used: data?.stats.screenshotsCount, limit: user?.team.plan === 'team' ? 1000 : user?.team.plan === 'starter' ? 300 : 25 },
-    projects: { used: data?.stats.projectsCount, limit: user?.team.plan === 'team' ? 1000 : user?.team.plan === 'starter' ? 5 : 3 },
-    teamMembers: { used: data?.stats.teamMembersCount, limit: user?.team.plan === 'team' ? 1000 : user?.team.plan === 'starter' ? 10 : 5 }
+    screenshots: {
+      used: data?.stats.screenshotsCount,
+      limit:
+        user?.team.plan === 'team'
+          ? 1000
+          : user?.team.plan === 'starter'
+            ? 300
+            : 25,
+    },
+    projects: {
+      used: data?.stats.projectsCount,
+      limit:
+        user?.team.plan === 'team'
+          ? 1000
+          : user?.team.plan === 'starter'
+            ? 5
+            : 3,
+    },
+    teamMembers: {
+      used: data?.stats.teamMembersCount,
+      limit:
+        user?.team.plan === 'team'
+          ? 1000
+          : user?.team.plan === 'starter'
+            ? 10
+            : 5,
+    },
   };
 
-  const screenshotPercentage = (usageData.screenshots.used / usageData.screenshots.limit) * 100;
-  const projectsPercentage = (usageData.projects.used / usageData.projects.limit) * 100;
-  const membersPercentage = (usageData.teamMembers.used / usageData.teamMembers.limit) * 100;
+  const screenshotPercentage =
+    (usageData.screenshots.used / usageData.screenshots.limit) * 100;
+  const projectsPercentage =
+    (usageData.projects.used / usageData.projects.limit) * 100;
+  const membersPercentage =
+    (usageData.teamMembers.used / usageData.teamMembers.limit) * 100;
 
   const isNearingScreenshotLimit = screenshotPercentage > 70;
   const isNearingProjectsLimit = projectsPercentage > 30;
   const isNearingMembersLimit = membersPercentage > 50;
-
 
   return (
     <div className="rounded-xl border border-white/8 bg-[#1A1A1A] p-6">
@@ -68,7 +103,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
         <div className="h-2 rounded-full bg-[#2C2C2C] overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
-              isNearingScreenshotLimit ? 'bg-linear-to-r from-orange-500 to-red-500' : 'bg-linear-to-r from-blue-500 to-purple-500'
+              isNearingScreenshotLimit
+                ? 'bg-linear-to-r from-orange-500 to-red-500'
+                : 'bg-linear-to-r from-blue-500 to-purple-500'
             }`}
             style={{ width: `${screenshotPercentage}%` }}
           />
@@ -77,7 +114,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm text-orange-400">You&apos;re nearing your screenshot limit</p>
+              <p className="text-sm text-orange-400">
+                You&apos;re nearing your screenshot limit
+              </p>
               <p className="text-xs text-white/50 mt-1">
                 Upgrade to Starter for 300 screenshots/month
               </p>
@@ -104,7 +143,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm text-orange-400">You&apos;re nearing your projects limit</p>
+              <p className="text-sm text-orange-400">
+                You&apos;re nearing your projects limit
+              </p>
               <p className="text-xs text-white/50 mt-1">
                 Upgrade to the Starter or Team plan for more screenshots
               </p>
@@ -131,7 +172,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm text-orange-400">You&apos;re nearing your team members limit</p>
+              <p className="text-sm text-orange-400">
+                You&apos;re nearing your team members limit
+              </p>
               <p className="text-xs text-white/50 mt-1">
                 Upgrade to the Starter or Team plan to add more team members
               </p>
@@ -144,7 +187,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
       <div className="pt-6 border-t border-white/8">
         <div className="flex items-center justify-between text-sm">
           <span className="text-white/50">Next renewal</span>
-          <span className="text-white/80">{data?.billingDate.nextBillingDateFormatted}</span>
+          <span className="text-white/80">
+            {data?.billingDate.nextBillingDateFormatted}
+          </span>
         </div>
       </div>
 
@@ -155,7 +200,10 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
           <span className="text-sm text-white/80">Usage insights</span>
         </div>
         <p className="text-xs text-white/50">
-          You&apos;ve used {screenshotPercentage}% of your screenshots this month. {isNearingScreenshotLimit && 'Consider upgrading for unlimited access.'}
+          You&apos;ve used {screenshotPercentage}% of your screenshots this
+          month.{' '}
+          {isNearingScreenshotLimit &&
+            'Consider upgrading for unlimited access.'}
         </p>
       </div>
     </div>

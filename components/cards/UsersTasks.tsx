@@ -1,4 +1,3 @@
-
 import { getToken } from '@/lib/auth';
 import { Capitalize } from '@/utils/helpers';
 import { Calendar, AlertCircle, Circle, CheckCircle2 } from 'lucide-react';
@@ -15,49 +14,76 @@ const priorityConfig = {
 } as const;
 
 const statusConfig = {
-  New: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  'In Progress': { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-  QA: { color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-  Done: { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+  New: {
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+  },
+  'In Progress': {
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-500/10',
+    border: 'border-yellow-500/20',
+  },
+  QA: {
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/20',
+  },
+  Done: {
+    color: 'text-green-400',
+    bg: 'bg-green-500/10',
+    border: 'border-green-500/20',
+  },
 } as const;
 
 export function UsersTasks() {
-    const token = getToken();
+  const token = getToken();
 
-    const { data: tasks, isLoading } = useSWR(token ? ['https://qa-backend-105l.onrender.com /api/users-tasks', token] : null, ([url, token]) => fetcher(url, token));
+  const { data: tasks, isLoading } = useSWR(
+    token
+      ? ['https://qa-backend-105l.onrender.com/api/users-tasks', token]
+      : null,
+    ([url, token]) => fetcher(url, token),
+  );
 
-    function normalizePriority(value: string): keyof typeof priorityConfig {
-      const v = value.toLowerCase();
+  function normalizePriority(value: string): keyof typeof priorityConfig {
+    const v = value.toLowerCase();
 
-        if (v === 'urgent') return 'urgent';
-        if (v === 'high') return 'high';
-        if (v === 'medium') return 'medium';
-        if (v === 'low') return 'low';
+    if (v === 'urgent') return 'urgent';
+    if (v === 'high') return 'high';
+    if (v === 'medium') return 'medium';
+    if (v === 'low') return 'low';
 
-        return 'low'; // fallback for "not assigned"
-      }
+    return 'low'; // fallback for "not assigned"
+  }
 
-      function normalizeStatus(value: string): keyof typeof statusConfig {
-        const v = value.toLowerCase();
+  function normalizeStatus(value: string): keyof typeof statusConfig {
+    const v = value.toLowerCase();
 
-        if (v === 'new') return 'New';
-        if (v === 'inprogress' || v === 'in progress' || 'inProgress') return 'In Progress';
-        if (v === 'qa') return 'QA';
-        if (v === 'done') return 'Done';
+    if (v === 'new') return 'New';
+    if (v === 'inprogress' || v === 'in progress' || 'inProgress')
+      return 'In Progress';
+    if (v === 'qa') return 'QA';
+    if (v === 'done') return 'Done';
 
-        return 'New'; // fallback
-      }
+    return 'New'; // fallback
+  }
 
-    if (isLoading) return <p className="text-white">Loading...</p>;
+  if (isLoading) return <p className="text-white">Loading...</p>;
 
   return (
     <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-white mb-1 font-semibold">My Tasks</h2>
-          <p className="text-sm text-gray-500">You have {tasks.length} active tasks</p>
+          <p className="text-sm text-gray-500">
+            You have {tasks.length} active tasks
+          </p>
         </div>
-        <Link className="text-sm text-purple-400 hover:text-purple-300 transition-colors cursor-pointer font-semibold" href="/my-tasks">
+        <Link
+          className="text-sm text-purple-400 hover:text-purple-300 transition-colors cursor-pointer font-semibold"
+          href="/my-tasks"
+        >
           View all
         </Link>
       </div>
@@ -73,13 +99,13 @@ export function UsersTasks() {
           </p>
         </div>
       ) : (
-      
         <div className="space-y-3 max-h-80 overflow-y-scroll custom-scrollbar pr-2.5">
           {tasks.map((task: Task) => {
-            const priorityStyle = priorityConfig[normalizePriority(task.priority)];
+            const priorityStyle =
+              priorityConfig[normalizePriority(task.priority)];
             const statusStyle = statusConfig[normalizeStatus(task.status)];
             const PriorityIcon = priorityStyle.icon;
-            
+
             return (
               <div
                 key={task.id}
@@ -93,27 +119,34 @@ export function UsersTasks() {
                       <Circle className="w-4 h-4 text-gray-600 group-hover:text-gray-500 transition-colors" />
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm text-gray-200 mb-2 group-hover:text-white transition-colors">
                       {task.title}
                     </h3>
-                    
+
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}
+                      >
                         {normalizeStatus(Capitalize(task.status))}
                       </span>
-                      
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${priorityStyle.bg} ${priorityStyle.color}`}>
+
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${priorityStyle.bg} ${priorityStyle.color}`}
+                      >
                         <PriorityIcon className="w-3 h-3" />
                         {Capitalize(task.priority)}
                       </span>
-                      
+
                       <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="w-3 h-3" />
-                        {new Date(task.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                        {new Date(task.dueDate).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
                       </span>
-                      
+
                       <span className="text-xs text-gray-600">
                         {task.project}
                       </span>

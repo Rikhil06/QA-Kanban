@@ -13,16 +13,15 @@ export const useUser = () => {
       return;
     }
 
-    fetch('https://qa-backend-105l.onrender.com /api/auth/me', {
+    fetch('https://qa-backend-105l.onrender.com/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.user) setUser(data.user);
         setLoading(false);
       });
   }, []);
 
-
-return useMemo(() => ({ user, loading }), [user, loading]);
+  return useMemo(() => ({ user, loading }), [user, loading]);
 };

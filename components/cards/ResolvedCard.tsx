@@ -2,7 +2,7 @@
 
 import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
-import { RiProgress8Line } from "react-icons/ri";
+import { RiProgress8Line } from 'react-icons/ri';
 
 export default function ResolvedIssuesCard() {
   const [resolvedIssues, setResolvedIssues] = useState<number | null>(null);
@@ -11,11 +11,14 @@ export default function ResolvedIssuesCard() {
   useEffect(() => {
     const fetchResolvedIssues = async () => {
       try {
-        const res = await fetch('https://qa-backend-105l.onrender.com /api/stats/resolved', {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const res = await fetch(
+          'https://qa-backend-105l.onrender.com/api/stats/resolved',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
         const data = await res.json();
         setResolvedIssues(data.resolvedIssues);
       } catch (err) {
@@ -28,13 +31,13 @@ export default function ResolvedIssuesCard() {
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex items-center gap-4 border border-gray-100 hover:shadow-lg transition">
-        <RiProgress8Line size={40} color='#6C5CE7' />
-        <div>
-            <h2 className="text-xl font-semibold mb-2">Closed Issues</h2>
-            <p className="text-3xl font-bold">
-                {resolvedIssues !== null ? resolvedIssues : '...'}
-            </p>
-        </div>
+      <RiProgress8Line size={40} color="#6C5CE7" />
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Closed Issues</h2>
+        <p className="text-3xl font-bold">
+          {resolvedIssues !== null ? resolvedIssues : '...'}
+        </p>
+      </div>
     </div>
   );
 }
