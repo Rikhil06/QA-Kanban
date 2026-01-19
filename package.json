@@ -23,7 +23,7 @@
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.560.0",
     "motion": "^12.23.25",
-    "next": "16.0.8",
+    "next": "16.0.10",
     "next-auth": "^4.24.11",
     "react": "19.2.1",
     "react-day-picker": "^9.13.0",
