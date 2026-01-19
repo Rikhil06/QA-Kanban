@@ -2,6 +2,7 @@ export interface QAReport {
     id: string;
     url: string;
     comment: string;
+    pagePath: string;
     x: number;
     y: number;
     status: string;
@@ -17,6 +18,7 @@ export type Report = {
     image: string;
     title: string;
     comment: string;
+    pagePath: string;
     url: string;
     x: number;
     y: number;
@@ -27,6 +29,7 @@ export type Report = {
     imagePath: string;
     userId: string;
     userName: string;
+    dueDate?: string;
 };
 
 export type Comment = {
@@ -36,11 +39,7 @@ export type Comment = {
     reportId?:  string | null;
     attachments?: Attachment[];
     replies?: Comment[];
-    user: {
-        id?: string,
-        email?: string, 
-        name: string,
-    };
+    user: User;
     createdAt: string;
 };
 
@@ -54,21 +53,48 @@ export interface ReportModalProps {
 export type Site = {
     id: string,
     name: string,
+    slug: string,
     email: string,
     site: string;
     siteName: string;
     count: number;
-    lastUpdated: string | Date;
+    isPinned: boolean;
+    counts: {
+      new: number,
+      inProgress: number,
+      done: number,
+    }
+    priorities: {
+      low: number,
+      medium: number,
+      high: number,
+      urgent: number,
+    }
+    members: [{
+      id: string,
+      name: string,
+      email: string,
+    }]
+    lastUpdated: string;
+    length: number;
+    siteStatus: string;
+    total: number;
 };
 
 export type Task = {
     id: string,
+    slug: string,
     title: string,
+    site: string,
     status: string,
     priority: 'not assigned' | 'low' | 'medium' | 'high' | 'urgent',
-    dueDate: string | Date,
+    dueDate: string,
     project: string,
     statusColor: string;
+    createdAt: Date;
+    createdBy: {
+      name: string,
+    }
 }
 
 export type StatusData = {
@@ -88,6 +114,7 @@ export type Activity = {
   time: string;
   type: string;
   link: string;
+  dueDate: string,
   user: {
     name: string;
     color: string;
@@ -102,6 +129,19 @@ export type Attachment = {
   type: string;
 }
 
+export type Filters = {
+  status: string[];
+  priority: string[];
+  assignee: string[];
+  pages: string[];
+  dateRange?: { from: string; to: string };
+}
+
+export type User = {
+  id: string,
+  email: string, 
+  name: string,
+}
 
 export type ColumnId = 'new' | 'inProgress' | 'done';
 

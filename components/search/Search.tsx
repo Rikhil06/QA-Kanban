@@ -22,7 +22,7 @@ export default function SearchBar() {
         setError(null);
 
         try {
-        const res = await fetch(`http://127.0.0.1:4000/api/search?q=${encodeURIComponent(q)}`, {
+        const res = await fetch(`https://qa-backend-105l.onrender.com /api/search?q=${encodeURIComponent(q)}`, {
             headers: { 
                 'Content-Type': 'application/json', 
                 Authorization: `Bearer ${token}`,

@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from 'date-fns';
 
-export const Capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || "";
+export const Capitalize = (s: string | undefined) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || "";
 
 export const getInitials = (fullName: string): string => {
   if (!fullName) return "";
@@ -34,3 +34,30 @@ export const getPriorityColor = (priority: string) => {
       return 'bg-gray-500'; // fallback
   }
 }
+
+export const formatFriendlyDate = (iso: string) => {
+  const d = new Date(iso);
+  const day = d.getUTCDate();
+
+  const ordinal =
+    day > 3 && day < 21
+      ? 'th'
+      : ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
+
+  return `${d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    timeZone: 'UTC',
+  })}, ${d.toLocaleDateString('en-GB', {
+    month: 'short',
+    timeZone: 'UTC',
+  })} ${day}${ordinal}`;
+};
+
+export const normalizeStatus = (status: string) => {
+        switch (status) {
+            case 'new': return 'New';
+            case 'inProgress': return 'In Progress';
+            case 'done': return 'Done';
+            default: return status;
+        }
+    };

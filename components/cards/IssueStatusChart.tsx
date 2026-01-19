@@ -8,7 +8,7 @@ import { StatusData } from '@/types/types';
 
 export function IssueStatusChart() {
     const token = getToken();
-    const { data: issuesSummary, isLoading } = useSWR(token ? ['http://127.0.0.1:4000/api/stats/issues-summary', token] : null, ([url, token]) => fetcher(url, token));
+    const { data: issuesSummary, isLoading } = useSWR(token ? ['https://qa-backend-105l.onrender.com /api/stats/issues-summary', token] : null, ([url, token]) => fetcher(url, token));
     
     if (isLoading) return <p className="text-white">Loading...</p>;
     const total = issuesSummary.reduce((sum, item) => sum + item.value, 0);

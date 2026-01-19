@@ -4,21 +4,19 @@ import { useUser } from '@/hooks/useUser';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/auth';
 import { UsersTasks } from '@/components/cards/UsersTasks';
-import { Notifications } from '@/components/cards/notifications';
+import { Notifications } from '@/components/cards/Notifications';
 import { RecentActivity } from '@/components/cards/RecentActivity';
 import { IssueStatusChart } from '@/components/cards/IssueStatusChart';
 import { MySites } from '@/components/cards/MySites';
 
 const token = getToken();
 
-// console.log(token);
-
 // if (!token) {
 //  redirect("/login"); // or show login modal
 // }
 
 // async function fetchReports(): Promise<QAReport[]> {
-//   const res = await fetch('http://127.0.0.1:4000/uploads', { headers: { Authorization: `Bearer ${token}` },cache: 'no-store' });
+//   const res = await fetch('https://qa-backend-105l.onrender.com /uploads', { headers: { Authorization: `Bearer ${token}` },cache: 'no-store' });
 //   if (!res.ok) throw new Error('Failed to fetch reports');
 //   return res.json();
 // }

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { IoHome, IoSearchOutline, IoLogOutOutline, IoLogInOutline, IoShareOutline, IoClose } from "react-icons/io5";
 import { TbMessageReport } from "react-icons/tb";
-import { RiArchiveDrawerLine, RiSettings3Line } from "react-icons/ri";
+import { RiSettings3Line } from "react-icons/ri";
 import { MdKeyboardCommandKey, MdAccountCircle, MdManageAccounts } from "react-icons/md";
 import { FaChartPie } from "react-icons/fa";
 import { IoIosNotificationsOutline } from "react-icons/io";
@@ -24,7 +24,8 @@ import slugify from 'slugify';
 import { stripTLD } from '@/utils/stripTLD';
 import { Capitalize } from '@/utils/helpers';
 import { useHotkey } from '@/hooks/useHotkey';
-import { Bell, LayoutList } from 'lucide-react';
+import { Bell, LayoutList, Users } from 'lucide-react';
+import { fetchUsersForSite } from '@/lib/fetchUsers';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -41,7 +42,10 @@ export default function Sidebar() {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const isReportsPage = pathname.startsWith("/reports/");
   const siteId = pathname?.split("/").pop();
+  const activeSites = sites.filter(s => s.siteStatus === 'active');
   useHotkey("cmd+k", () => setIsSearchOpen(true));
+  const teamId = user?.teamId;
+
 
 
   useEffect(() => {
@@ -63,34 +67,30 @@ export default function Sidebar() {
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, []);
 
     useEffect(() => {
 
-        if (!siteId) return;
+        if (!siteId || !isReportsPage) return;
 
-        if(isReportsPage){
-            const fetchUsers = async () => {
+        const fetchUsers = async () => {
             try {
-                const res = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/users`);
-                if (!res.ok) return;
-                const data = await res.json();
+                const data = await fetchUsersForSite(siteId);
                 setUsers(data);
-            } catch (error) {
-                console.error("Error fetching users:", error);
+            } catch (err) {
+                console.error(err);
             }
         };
 
         fetchUsers();
-    }
     }, [pathname]);
 
     useEffect(() => {
         const getSites = async () => {
-        const data = await fetchSites(token);
-        setSites(data);
-        setSiteLoading(false);
+            const data = await fetchSites(token);
+            setSites(data);
+            setSiteLoading(false);
         };
     
         getSites();
@@ -100,10 +100,10 @@ export default function Sidebar() {
         e.preventDefault();
 
         try {
-        const response = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/invite`, {
+        const response = await fetch(`https://qa-backend-105l.onrender.com /api/site/${siteId}/invite`, {
             method: 'POST',
-            body: JSON.stringify({ email }),
-            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, teamId}),
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -117,15 +117,15 @@ export default function Sidebar() {
         }
     }  
 
-    if (siteLoading) return <p className="text-gray-500">Loading sites...</p>;
-    if (!sites.length) return <p className="text-gray-500">No sites found.</p>;
+    // if (siteLoading) return <p className="text-gray-500">Loading sites...</p>;
+    // if (!sites.length) return <p className="text-gray-500">No sites found.</p>;
 
     if (loading) return null;
 
 
 return (
     <aside className='bg-[#0a0a0a] border-r border-white/5 w-2/12 h-full z-50'>
-        <div className="h-16 px-6 flex items-center border-b border-white/5">
+        <Link className="h-16 px-6 flex items-center border-b border-white/5" href="/">
             <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-linear-to-br from-purple-500 to-blue-500 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-square-check-big w-4 h-4 text-white" aria-hidden="true">
@@ -135,7 +135,7 @@ return (
                 </div>
                 <span className="tracking-tight text-gray-100">QA Board</span>
             </div>
-        </div>
+        </Link>
         <div className="flex flex-col justify-between px-3 py-4 h-[calc(100%-64px)]">
             <div className="flex flex-col gap-1">
                 <Link className={`flex items-center gap-3 w-full p-2 text-sm px-3 py-2 rounded-lg transition-all text-white shadow-lg ${pathname !== '/' ? 'hover:text-gray-200 hover:bg-white/4' : ''} ${pathname == '/' ? 'bg-white/8 text-white shadow-white/5' : ''} `} href='/'>
@@ -184,25 +184,21 @@ return (
                 </button>
                 <span className='w-full h-px bg-[#3b3b3a] block my-1'></span>
                 <div>
-                    <Link className={`flex items-center gap-3 w-full p-2 text-sm px-3 py-2 rounded-lg transition-all text-white shadow-lg ${pathname.startsWith("/reports") ? 'hover:text-gray-200 hover:bg-white/4' : ''} ${pathname.startsWith("/reports") ? 'bg-white/8 text-white shadow-white/5' : ''} `} href='/reports'>
+                    <Link className={`flex items-center gap-3 w-full p-2 text-sm px-3 py-2 rounded-lg transition-all text-white shadow-lg ${pathname.startsWith("/reports") ? 'hover:text-gray-200 hover:bg-white/4' : ''} ${pathname.startsWith("/reports") ? 'bg-white/8 text-white shadow-white/5' : ''} ` } href='/reports'>
                         <TbMessageReport />
                         <p className='text-md'>Reports</p>
                     </Link>
                     <div>
-                            {sites.map((site) => (
+                            {activeSites.map((site) => (
                                 <Link 
                                     key={site.id} 
-                                    className={`flex items-center justify-between gap-2 p-2 ml-8 text-gray-100 text-sm ${pathname.includes(`reports/${slugify(site.siteName, { lower: true })}`) ? 'bg-[#3b3b3a] rounded-xl mt-2' : ''}`} 
-                                    href={`/reports/${slugify(site.siteName, { lower: true })}`}>
+                                    className={`flex items-center justify-between gap-2 p-2 ml-8 text-gray-100 text-sm ${pathname.includes(`reports/${stripTLD(site.site)}`) ? 'bg-[#3b3b3a] rounded-xl mt-2' : ''}`} 
+                                    href={`/reports/${stripTLD(site.site)}`}>
                                     {Capitalize(stripTLD(site.site))}
                                     <CiShare1 />
                                 </Link>
                             ))}
                     </div>
-                    <Link className={`flex items-center gap-2 w-full p-2 text-gray-100 text-sm ${pathname == '/archived' ? 'bg-[#3b3b3a] rounded-xl' : ''}`} href='/archived'>
-                        <RiArchiveDrawerLine />
-                        <p className='text-md'>Archived</p>
-                    </Link>
                     <Link className={`flex items-center gap-2 w-full p-2 text-gray-100 text-sm ${pathname == '/notifications' ? 'bg-[#3b3b3a] rounded-xl' : ''}`} href='/notifications'>
                         <Bell size={15} />
                         <p className='text-md'>Notifications</p>
@@ -211,6 +207,12 @@ return (
                         <LayoutList size={15}/>
                         <p className='text-md'>My Tasks</p>
                     </Link>
+                    {user?.teamId && (
+                        <Link className={`flex items-center gap-2 w-full p-2 text-gray-100 text-sm ${pathname == '/team' ? 'bg-[#3b3b3a] rounded-xl' : ''}`} href='/team'>
+                            <Users size={15}/>
+                            <p className='text-md'>Team</p>
+                        </Link>
+                    )}
                 </div>
             </div>
             <div className="flex flex-col">

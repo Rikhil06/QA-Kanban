@@ -11,7 +11,7 @@ export default function ResolvedIssuesCard() {
   useEffect(() => {
     const fetchResolvedIssues = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:4000/api/stats/resolved', {
+        const res = await fetch('https://qa-backend-105l.onrender.com /api/stats/resolved', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

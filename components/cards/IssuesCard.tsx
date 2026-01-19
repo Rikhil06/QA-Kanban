@@ -1,6 +1,7 @@
 'use client';
 
 import { getToken } from '@/lib/auth';
+import { fetchOpenIssues } from '@/utils/fetchOpenIssues';
 import { useEffect, useState } from 'react';
 import { RiProgress2Line } from "react-icons/ri";
 
@@ -8,23 +9,21 @@ export default function OpenIssuesCard() {
   const [openIssues, setOpenIssues] = useState<number | null>(null);
   const token = getToken();
 
-  useEffect(() => {
-    const fetchOpenIssues = async () => {
-      try {
-        const res = await fetch('http://127.0.0.1:4000/api/stats/open-issues', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        setOpenIssues(data.openIssues);
-      } catch (err) {
-        console.error('Failed to load open issues:', err);
-      }
-    };
+useEffect(() => {
+  if (!token) return;
 
-    fetchOpenIssues();
-  }, []);
+  const loadOpenIssues = async () => {
+    try {
+      const data = await fetchOpenIssues(token);
+      setOpenIssues(data.openIssues);
+    } catch (err) {
+      console.error(err);
+      // optional: show toast / fallback UI
+    }
+  };
+
+  loadOpenIssues();
+}, [token]);
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex items-center gap-4 border border-gray-100 hover:shadow-lg transition">

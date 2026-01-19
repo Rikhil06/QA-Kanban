@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Bell, ChevronDown } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { getInitials } from '@/utils/helpers';
 import SearchBar from './search/Search';
@@ -17,7 +17,7 @@ export default function Header() {
       <div className='flex gap-3'>
         {/* Workspace Switcher */}
         <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/4 border border-white/8 hover:bg-white/6 transition-all">
-          <span className="text-sm text-gray-300">Glion / Les Roche</span>
+          <span className="text-sm text-gray-300">{user?.team.name}</span>
           <ChevronDown className="w-4 h-4 text-gray-500" />
         </button>
       

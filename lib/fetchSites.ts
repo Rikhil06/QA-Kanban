@@ -2,7 +2,7 @@
 
 export async function fetchSites(token: string | null) {
   try {
-    const res = await fetch('http://127.0.0.1:4000/api/sites', {
+    const res = await fetch('https://qa-backend-105l.onrender.com /api/sites', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

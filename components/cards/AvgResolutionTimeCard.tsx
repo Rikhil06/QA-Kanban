@@ -9,7 +9,7 @@ export default function AvgResolutionTimeCard() {
   const token = getToken();
 
   useEffect(() => {
-    fetch('http://127.0.0.1:4000/api/stats/avg-resolution-time', {
+    fetch('https://qa-backend-105l.onrender.com /api/stats/avg-resolution-time', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
   import Image from 'next/image';
-import { X, Bug, Sparkles, CheckSquare, Calendar, MessageSquare, Send, ChevronDown, Edit2, Paperclip, File } from 'lucide-react';
+import { X, Bug, Sparkles, CheckSquare, MessageSquare, Send, ChevronDown, Edit2, Paperclip, File, ChevronDownIcon, Calendar, MoreVertical, Trash2 } from 'lucide-react';
 import { ReportModalProps, Report, Site, ColumnId, Priority, Comment, Attachment } from '@/types/types';
 import { getToken } from '@/lib/auth';
 import { usePathname } from 'next/navigation';
@@ -11,19 +11,10 @@ import { toast } from 'react-toastify';
 import Zoom from 'react-medium-image-zoom'
 import CommentItem from './comment/CommentItem';
 import { useUser } from '@/context/UserContext';
-
-const typeIcons = {
-  bug: Bug,
-  feature: Sparkles,
-  task: CheckSquare,
-};
-
-const priorityColors = {
-  low: 'bg-slate-500',
-  medium: 'bg-blue-500',
-  high: 'bg-orange-500',
-  urgent: 'bg-red-500',
-};
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Button } from './ui/button';
+import { CalendarCN } from './ui/calendar';
+import { deleteReport } from '@/utils/deleteReport';
 
 // const statusOptions: Issue['status'][] = ['backlog', 'in-progress', 'review', 'done'];
 // const priorityOptions: Issue['priority'][] = ['low', 'medium', 'high', 'urgent'];
@@ -50,10 +41,15 @@ const priorityColors = {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     const fetchReport = async () => {
-      const res = await fetch(`http://127.0.0.1:4000/uploads/${id}.json`);
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}`, {
+          headers: {
+        Authorization: `Bearer ${token}`,
+      }});
       if (!res.ok) return;
       const data = await res.json();
       setReport(data);
@@ -62,7 +58,7 @@ const priorityColors = {
     fetchReport();
 
     const fetchComments = async () => {
-      const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`);
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/reports/${id}/comments`);
       if (!res.ok) return;
       const data = await res.json();
       setComments(data);
@@ -70,7 +66,7 @@ const priorityColors = {
     fetchComments();
 
     const fetchStatus= async () => {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/status`, {
           headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -82,7 +78,7 @@ const priorityColors = {
     fetchStatus();
 
     const fetchPriority= async () => {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/priority`);
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/priority`);
       if (!res.ok) return;
       const data = await res.json();
       setPriority(data.priority);
@@ -97,7 +93,7 @@ const priorityColors = {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:4000/api/site/${siteId}/users`);
+        const res = await fetch(`https://qa-backend-105l.onrender.com /api/site/${siteId}/users`);
         if (!res.ok) return;
         const data = await res.json();
         setUsers(data);
@@ -110,8 +106,9 @@ const priorityColors = {
   }, [pathname]);
 
   const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
+
     try {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/status`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
         body: JSON.stringify({ status: newStatus }),
@@ -139,7 +136,7 @@ const priorityColors = {
 
   const handlePriorityChange = async (newStatus: Priority, shouldClose = false) => {
     try {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${id}/priority`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/priority`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
         body: JSON.stringify({ priority: newStatus }),
@@ -158,9 +155,40 @@ const priorityColors = {
 
     } catch (error) {
       console.error(error);
+      toast.error("Failed to update status"); 
+    }
+  };
+
+  const handleDueDate = async (date: Date | undefined) => {
+    try {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${id}/due-date`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
+        body: JSON.stringify({ dueDate: date?.toISOString().split('T')[0] }),
+      });
+  
+      if (!res.ok) throw new Error('Failed to update status');
+  
+      const updated = await res.json();
+      toast.success(`Moved to ${Capitalize(updated.priority)}!`);
+
+      if(res.ok){
+        setDate(date);
+        setOpen(false)
+        setReport(prev => prev ? { ...prev, dueDate: date?.toISOString().split("T")[0] } : prev);
+      }
+
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to update status");
     }
   };
+
+  useEffect(() => {
+    if (report?.dueDate) {
+      setDate(new Date(report.dueDate));
+    }
+  }, [report?.dueDate]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -191,13 +219,11 @@ const priorityColors = {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`http://127.0.0.1:4000/api/reports/${id}/comments`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/reports/${id}/comments`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`},
         body: formData,
       });
-
-      console.log(res);
 
 
       if (!res.ok) {
@@ -238,7 +264,7 @@ const priorityColors = {
 
   try {
     const res = await fetch(
-      `http://127.0.0.1:4000/api/reports/${id}/comments`,
+      `https://qa-backend-105l.onrender.com /api/reports/${id}/comments`,
       {
         method: 'POST',
         headers: {
@@ -305,9 +331,6 @@ const priorityColors = {
   if (!report) return null;
   if (loading) return null;
 
-  console.log(report);
-
-
   return (
     <>
       {/* Backdrop */}
@@ -324,12 +347,41 @@ const priorityColors = {
             {/* <Icon className="h-5 w-5 text-white/40" /> */}
             <h2 className="text-white/90">{report.title}</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60 cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <div className="relative">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === 'more' ? null : 'more')}
+                className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
+
+                {openDropdown === 'more' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] p-1 shadow-2xl">
+                      <button
+                        onClick={() => {
+                          deleteReport(report.id);
+                          onClose();
+                        }}
+                        className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Issue
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/8 hover:text-white/60 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -340,7 +392,7 @@ const priorityColors = {
               <div className='relative h-64'>
                 <Zoom zoomMargin={45}>
                   <Image
-                      src={report.image}
+                      src={report.imagePath}
                       alt="Screenshot"
                       fill
                       className="object-cover rounded-2xl"
@@ -363,9 +415,9 @@ const priorityColors = {
                   className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
-                    {getInitials(report.userName)}
+                    {getInitials(report?.userName)}
                   </div>
-                  <span className="text-sm text-white/80">{report.userName}</span>
+                  <span className="text-sm text-white/80">{report?.userName}</span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
@@ -524,8 +576,35 @@ const priorityColors = {
               </div>
             </div>
 
+            <div className="">
+              <label className="mb-2 block text-xs text-white/40">Due Date</label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    id="date"
+                    className="w-48 justify-between font-normal"
+                  >
+                    {report.dueDate ? new Date(report.dueDate).toLocaleDateString('en-GB') : "Select date"}
+                    <ChevronDownIcon />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                  <CalendarCN
+                    mode="single"
+                    selected={date}
+                    captionLayout="dropdown"
+                    className='flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12 bg-none'
+                    onSelect={(date) => {
+                      handleDueDate(date);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
             {/* Last Updated */}
-            <div className="col-span-2">
+            <div className="">
               <label className="mb-2 block text-xs text-white/40">Last Updated</label>
               <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
                 <Calendar className="h-4 w-4 text-white/40" />

@@ -13,7 +13,7 @@ export const useUser = () => {
       return;
     }
 
-    fetch('http://127.0.0.1:4000/api/auth/me', {
+    fetch('https://qa-backend-105l.onrender.com /api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.ok ? res.json() : null)

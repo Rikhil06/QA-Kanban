@@ -1,7 +1,7 @@
 // utils/updateStatus.ts
 export async function updateStatus(token: string | null, reportId: string, newStatus: string) {
     try {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${reportId}/status`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${reportId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

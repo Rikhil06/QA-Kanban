@@ -2,7 +2,7 @@ import { toast } from 'react-toastify';
 
 export async function deleteReport(reportId: string): Promise<void> {
     try {
-      const res = await fetch(`http://127.0.0.1:4000/api/report/${reportId}`, {
+      const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${reportId}`, {
         method: 'DELETE',
       });
   

@@ -11,7 +11,7 @@ export default function InProgressCard() {
   useEffect(() => {
     const fetchOpenIssues = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:4000/api/stats/in-progress', {
+        const res = await fetch('https://qa-backend-105l.onrender.com /api/stats/in-progress', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

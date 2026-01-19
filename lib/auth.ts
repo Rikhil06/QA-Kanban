@@ -11,8 +11,8 @@ export const getToken = () => {
 export const setToken = (token: string) => {
   Cookies.set(TOKEN_KEY, token, { 
     path: '/', 
-    secure: true, 
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production', 
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     expires: 7 
   });
 };

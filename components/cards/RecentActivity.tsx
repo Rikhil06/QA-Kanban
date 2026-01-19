@@ -17,14 +17,13 @@ const iconMap: Record<string, any> = {
 export function RecentActivity() {
   const token = getToken();
   const { data: activities, error, isLoading } = useSWR(
-    token ? ['http://127.0.0.1:4000/api/activities', token] : null,
+    token ? ['https://qa-backend-105l.onrender.com /api/activities', token] : null,
     ([url, token]) => fetcher(url, token),
     { refreshInterval: 10000 }
   );
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Failed to load activities</div>;
-  if (!activities || activities.length === 0) return <div>No activities yet</div>;
 
   return (
     <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
@@ -37,53 +36,71 @@ export function RecentActivity() {
           View all
         </button>
       </div>
+
+      {activities.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+            <GitCommit className="w-8 h-8 text-gray-600" />
+          </div>
+          <h3 className="text-gray-300 mb-2">No activity yet</h3>
+          <p className="text-sm text-gray-500 max-w-xs">
+            Activity from your team will appear here.
+          </p>
+        </div>
+      ) : (
       
-      <div className="space-y-4 max-h-80 overflow-y-scroll custom-scrollbar pr-2.5">
-        {activities.map((activity: Activity, index: number) => {
-          const Icon = iconMap[activity.type] || AlertCircle;
-          return (
-            <div key={activity.id} className="flex gap-4">
-              {/* Timeline */}
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0`}>
-                  <Icon className={`w-4 h-4 ${activity.iconColor}`} />
-                </div>
-                {index < activities.length - 1 && (
-                  <div className="w-px h-full bg-white/5 mt-2"></div>
-                )}
-              </div>
-              
-              {/* Content */}
-              <div className="flex-1 pb-4">
-                <div className="flex items-start gap-3">
-                  <div className={`w-7 h-7 rounded-full bg-linear-to-br ${activity.user.color} flex items-center justify-center text-xs shrink-0`}>
-                    {activity.user.avatar}
+        <div className="space-y-4 max-h-80 overflow-y-scroll custom-scrollbar pr-2.5">
+          {activities.map((activity: Activity, index: number) => {
+            const Icon = iconMap[activity.type] || AlertCircle;
+            return (
+              <div key={activity.id} className="flex gap-4">
+                {/* Timeline */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-4 h-4 ${activity.iconColor}`} />
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-300 mb-1">
-                      <span className="text-white">{activity.user.name}</span>{' '}
-                      {activity.action}{' '}
-                      <Link href={activity.link} className="text-white">{activity.target}</Link>
-                      {activity.status && (
-                        <>
-                          {' '}to <span className="text-purple-400 font-semibold">{activity.status}</span>
-                        </>
-                      )}
-                      {activity.priority && (
-                        <>
-                          {' '}to priority <span className="text-red-400 font-semibold">{Capitalize(activity.priority)}</span>
-                        </>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-600">{activity.time}</p>
+                  {index < activities.length - 1 && (
+                    <div className="w-px h-full bg-white/5 mt-2"></div>
+                  )}
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 pb-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-full bg-linear-to-br ${activity.user.color} flex items-center justify-center text-xs shrink-0`}>
+                      {activity.user.avatar}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-300 mb-1">
+                        <span className="text-white">{activity.user.name}</span>{' '}
+                        {activity.action}{' '}
+                        <Link href={activity.link} className="text-white">{activity.target}</Link>
+                        {activity.status && (
+                          <>
+                            {' '}to <span className="text-purple-400 font-semibold">{activity.status}</span>
+                          </>
+                        )}
+                        {activity.priority && (
+                          <>
+                            {' '}to priority <span className="text-red-400 font-semibold">{Capitalize(activity.priority)}</span>
+                          </>
+                        )}
+                        {activity.dueDate && (
+                          <>
+                            {' '}due date to <span className="text-red-400 font-semibold">{new Date(activity.dueDate).toLocaleDateString()}</span>
+                          </>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-600">{activity.time}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

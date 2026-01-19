@@ -1,12 +1,33 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
+import { clearToken, getToken } from '@/lib/auth';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
+interface Subscription{
+  plan: string,
+  interval: string,
+  status: string,
+  trialEndsAt: string,
+  currentPeriodEnd: string,
+  stripePriceId: string,
+  stripeSubscriptionId: string,
+}
+
+interface Team {
+  id: string;
+  name: string;
+  plan: string; // you could also make this a Plan enum
+  subscription?: Subscription; // use proper type if you know the subscription shape
+}
 
 interface User {
   id: string;
   name: string;
   email: string;
+  teamId: string;
+  team: Team;
+  role: string;
+  memberships?: []; 
 }
 
 interface UserContextType {
@@ -36,7 +57,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const res = await fetch('http://127.0.0.1:4000/api/auth/me', {
+      const res = await fetch('https://qa-backend-105l.onrender.com /api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -52,7 +73,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 🔥 logout clears token + context immediately
   const logout = () => {
-    localStorage.removeItem('token');
+    clearToken();
     setUser(null);
   };
 
