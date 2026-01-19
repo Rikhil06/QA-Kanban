@@ -22,13 +22,13 @@ type Notification = {
 export function Notifications() {
     const token = getToken();
     const { data: notifications, error, isLoading } = useSWR(
-      token ? ['https://qa-backend-105l.onrender.com /api/notifications', token] : null,
+      token ? ['https://qa-backend-105l.onrender.com/api/notifications', token] : null,
       ([url, token]) => fetcher(url, token),
       { refreshInterval: 10000 }
     );
 
     async function handleNotificationClick(notificationId: string) {
-      await fetch(`/api/notifications/${notificationId}/read`, {
+      await fetch(`https://qa-backend-105l.onrender.com/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       });
