@@ -33,7 +33,7 @@ export default function UpgradeButton(props: UpgradeButtonProps) {
       setLoading(true);
       onClick?.();
 
-      const res = await fetch("http://localhost:4000/billing/checkout", {
+      const res = await fetch("https://qa-backend-105l.onrender.com/billing/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

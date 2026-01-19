@@ -23,7 +23,7 @@ const [data, setData] = useState<Team | null>(null);
   useEffect(() => {
     async function refreshTeam() {
       // Call your /api/auth/me (or team endpoint) to re-fetch plan
-      const res = await fetch("http://localhost:4000/api/auth/me", {
+      const res = await fetch("https://qa-backend-105l.onrender.com/api/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -9,6 +9,10 @@ const nextConfig = {
         hostname: '**.r2.cloudflarestorage.com', // allow all R2 buckets
       },
       {
+        protocol: 'https',
+        hostname: 'https://qa-backend-105l.onrender.com', // allow all R2 buckets
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
         port: '4000',
