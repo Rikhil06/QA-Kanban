@@ -158,7 +158,7 @@ export function TeamMembersList({
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-white/40">
-                      {timeAgo(member.lastActive) || '—'}
+                      {timeAgo(member.lastActive ?? new Date()) || '—'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

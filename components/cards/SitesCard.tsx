@@ -11,8 +11,8 @@ import { stripTLD } from '@/utils/stripTLD';
 interface SiteCardProps {
   site: Site;
   toggleSiteArchive: (id: string, shouldArchive: boolean) => Promise<any>;
-  pinSite: (id: string) => Promise<any>;
-  unpinSite: (id: string) => Promise<any>;
+  pinSite?: (id: string) => Promise<any>;
+  unpinSite?: (id: string) => Promise<any>;
 }
 
 type QuickActionProps = {
@@ -77,11 +77,11 @@ export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite }
   };
   
   const handlePinSite = () => {
-    pinSite(stripTLD(site.slug));
+    pinSite?.(stripTLD(site.slug));
   }
 
   const handleUnpinSite = () => {
-    unpinSite(stripTLD(site.slug));
+    unpinSite?.(stripTLD(site.slug));
   }
 
 

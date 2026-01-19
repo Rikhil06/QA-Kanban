@@ -7,66 +7,17 @@ import { Bell, AlertTriangle, UserPlus, Clock, MessageCircle } from 'lucide-reac
 import Link from 'next/link';
 import useSWR from 'swr';
 
-// const notifications = [
-//   {
-//     id: 1,
-//     type: 'mention',
-//     title: 'Sarah mentioned you',
-//     description: 'In "Fix navigation issue"',
-//     time: '5 min ago',
-//     icon: MessageCircle,
-//     iconColor: 'text-blue-400',
-//     iconBg: 'bg-blue-500/10',
-//     unread: true,
-//   },
-//   {
-//     id: 2,
-//     type: 'overdue',
-//     title: '2 tasks overdue',
-//     description: 'Payment gateway & API docs',
-//     time: 'Today',
-//     icon: AlertTriangle,
-//     iconColor: 'text-red-400',
-//     iconBg: 'bg-red-500/10',
-//     unread: true,
-//   },
-//   {
-//     id: 3,
-//     type: 'assignment',
-//     title: 'New assignment',
-//     description: 'Mike assigned you a task',
-//     time: '1 hour ago',
-//     icon: UserPlus,
-//     iconColor: 'text-green-400',
-//     iconBg: 'bg-green-500/10',
-//     unread: true,
-//   },
-//   {
-//     id: 4,
-//     type: 'due',
-//     title: '3 tasks due today',
-//     description: 'Mobile nav, Payment, Auth',
-//     time: 'Today',
-//     icon: Clock,
-//     iconColor: 'text-orange-400',
-//     iconBg: 'bg-orange-500/10',
-//     unread: false,
-//   },
-// ];
-
-// {
-//     "id": "overdue-cmk5n1lmp000fvav3sl10zsav",
-//     "type": "TASK_OVERDUE",
-//     "message": "Task \"Change the order of these logos\" is overdue",
-//     "createdAt": "2026-01-10T00:00:00.000Z",
-//     "report": {
-//         "id": "cmk5n1lmp000fvav3sl10zsav",
-//         "title": "Change the order of these logos",
-//         "dueDate": "2026-01-10T00:00:00.000Z",
-//         "siteName": "Rikhil Makwana - Portfolio"
-//     },
-//     "link": "/reports/rikhil makwana - portfolio?report=cmk5n1lmp000fvav3sl10zsav"
-// }
+type Notification = {
+  id: string;
+  type: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  report: {
+    title: string;
+  };
+  // any other fields you expect from the API
+};
 
 export function Notifications() {
     const token = getToken();
@@ -111,12 +62,12 @@ export function Notifications() {
           <h2 className="text-white">Notifications</h2>
         </div>
         <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-xs border border-red-500/20">
-          {notifications.notifications.filter(n => n.read === false ).length} new
+          {notifications.notifications.filter((n: Notification) => n.read === false ).length} new
         </span>
       </div>
       
       <div className="space-y-3 max-h-60 overflow-y-scroll custom-scrollbar pr-2.5">
-        {notifications.notifications.map((notification) => {
+        {notifications.notifications.map((notification: Notification) => {
           const Icon = iconMap[notification.type];
           const iconBg = iconBgMap[notification.type];
           const iconColor = iconColorMap[notification.type];

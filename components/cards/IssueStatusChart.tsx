@@ -6,12 +6,18 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { StatusData } from '@/types/types';
 
+type Issue = {
+  value: number;
+  color: string;
+};
+
+
 export function IssueStatusChart() {
     const token = getToken();
     const { data: issuesSummary, isLoading } = useSWR(token ? ['https://qa-backend-105l.onrender.com /api/stats/issues-summary', token] : null, ([url, token]) => fetcher(url, token));
     
     if (isLoading) return <p className="text-white">Loading...</p>;
-    const total = issuesSummary.reduce((sum, item) => sum + item.value, 0);
+    const total = issuesSummary.reduce((sum: number, item: Issue) => sum + item.value, 0);
     
   return (
     <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
@@ -32,7 +38,7 @@ export function IssueStatusChart() {
               paddingAngle={2}
               dataKey="value"
             >
-              {issuesSummary.map((entry, index) => (
+              {issuesSummary.map((entry: Issue, index: number) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>

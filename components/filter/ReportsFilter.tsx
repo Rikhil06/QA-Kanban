@@ -23,13 +23,19 @@ export function FilterBar({ filters, setFilters, onClearFilters, users, pages }:
   })
 
   const toggleFilter = (category: keyof Filters, value: string) => {
+  const current = filters[category];
+
+  if (Array.isArray(current)) {
     setFilters({
       ...filters,
-      [category]: filters[category]?.includes(value)
-        ? filters[category].filter((v) => v !== value)
-        : [...filters[category], value],
+      [category]: current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value],
     });
-  };
+  } else {
+    console.warn(`Cannot toggle filter: ${category} is not an array`);
+  }
+};
 
   const hasActiveFilters =
     filters.status.length > 0 ||

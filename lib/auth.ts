@@ -1,11 +1,10 @@
 // utils/auth.ts
-import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
 const TOKEN_KEY = 'token';
 
 export const getToken = () => {
-  return Cookies.get(TOKEN_KEY) || null;
+  return Cookies.get(TOKEN_KEY);
 };
 
 export const setToken = (token: string) => {

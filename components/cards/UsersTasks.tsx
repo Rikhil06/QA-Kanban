@@ -111,12 +111,7 @@ export function UsersTasks() {
                       
                       <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="w-3 h-3" />
-                        {task.dueDate instanceof Date
-                        ? task.dueDate.toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short"
-                          })
-                        : task.dueDate}
+                        {new Date(task.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                       </span>
                       
                       <span className="text-xs text-gray-600">

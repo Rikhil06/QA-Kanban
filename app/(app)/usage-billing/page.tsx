@@ -58,7 +58,6 @@ export default function Page() {
           {/* Pricing Cards */}
           <PricingCards 
             billingPeriod={billingPeriod} 
-            currentPlan={currentPlan}
             onUpgrade={(plan) => setCurrentPlan(plan)}
           />
 

@@ -223,14 +223,20 @@ export default function Page() {
   );
     };
 
-  const groupByKey = (tasks: Task[], key: string) => {
-    return tasks.reduce<Record<string, Task[]>>((groups, task) => {
-      const value = task[key as keyof Task] ?? 'Unknown';
-      if (!groups[value]) groups[value] = [];
-      groups[value].push(task);
-      return groups;
-    }, {});
-  };
+  const groupByKey = (tasks: Task[], key: keyof Task) => {
+  return tasks.reduce<Record<string, Task[]>>((groups, task) => {
+    const rawValue = task[key];
+    const value = rawValue instanceof Date
+      ? rawValue.toISOString()
+      : typeof rawValue === 'object'
+      ? JSON.stringify(rawValue)
+      : String(rawValue ?? 'Unknown');
+
+    if (!groups[value]) groups[value] = [];
+    groups[value].push(task);
+    return groups;
+  }, {});
+};
     
   const groupedByStatus = useMemo(() => groupByKey(dateFilteredTasks, 'status'), [dateFilteredTasks]);
   const groupedBySite = useMemo(() => groupByKey(dateFilteredTasks, 'site'), [dateFilteredTasks]);

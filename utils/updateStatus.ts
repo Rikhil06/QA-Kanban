@@ -1,5 +1,5 @@
 // utils/updateStatus.ts
-export async function updateStatus(token: string | null, reportId: string, newStatus: string) {
+export async function updateStatus(token: string | undefined, reportId: string, newStatus: string) {
     try {
       const res = await fetch(`https://qa-backend-105l.onrender.com /api/report/${reportId}/status`, {
         method: 'PATCH',

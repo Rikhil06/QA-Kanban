@@ -1,6 +1,6 @@
 // lib/fetchSites.ts
 
-export async function fetchSites(token: string | null) {
+export async function fetchSites(token: string | undefined) {
   try {
     const res = await fetch('https://qa-backend-105l.onrender.com /api/sites', {
       headers: {
