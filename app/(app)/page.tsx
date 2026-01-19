@@ -4,7 +4,7 @@ import { useUser } from '@/hooks/useUser';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/auth';
 import { UsersTasks } from '@/components/cards/UsersTasks';
-import { Notifications } from '@/components/cards/notifications';
+import { Notifications } from '@/components/cards/Notifications';
 import { RecentActivity } from '@/components/cards/RecentActivity';
 import { IssueStatusChart } from '@/components/cards/IssueStatusChart';
 import { MySites } from '@/components/cards/MySites';
