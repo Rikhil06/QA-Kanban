@@ -32,14 +32,11 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const res = await fetch(
-        'https://qa-backend-105l.onrender.com/api/auth/register',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, name }),
-        },
-      );
+      const res = await fetch(`${process.env.BACKEND_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
 
       const data = await res.json();
 
@@ -54,7 +51,7 @@ export default function RegisterPage() {
       }
 
       if (inviteCode) {
-        await fetch('https://qa-backend-105l.onrender.com/teams/join', {
+        await fetch(`${process.env.BACKEND_URL}/teams/join`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -46,16 +46,13 @@ export function CreateTeamCard({
       if (logoFile) formData.append('logo', logoFile);
       formData.append('plan', planType);
 
-      const res = await fetch(
-        'https://qa-backend-105l.onrender.com/teams/create',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          method: 'POST',
-          body: formData,
+      const res = await fetch(`${process.env.BACKEND_URL}/teams/create`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        method: 'POST',
+        body: formData,
+      });
 
       const data = await res.json();
 

@@ -27,7 +27,7 @@ export default function SearchBar() {
 
     try {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/search?q=${encodeURIComponent(q)}`,
+        `${process.env.BACKEND_URL}/api/search?q=${encodeURIComponent(q)}`,
         {
           headers: {
             'Content-Type': 'application/json',

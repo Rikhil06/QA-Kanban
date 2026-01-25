@@ -1,7 +1,7 @@
 export const fetchUsersForSite = async (siteId: string) => {
   try {
     const res = await fetch(
-      `https://qa-backend-105l.onrender.com/api/site/${siteId}/users`,
+      `${process.env.BACKEND_URL}/api/site/${siteId}/users`,
     );
 
     // If response is not OK, fallback immediately

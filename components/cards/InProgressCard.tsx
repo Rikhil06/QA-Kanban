@@ -12,7 +12,7 @@ export default function InProgressCard() {
     const fetchOpenIssues = async () => {
       try {
         const res = await fetch(
-          'https://qa-backend-105l.onrender.com/api/stats/in-progress',
+          `${process.env.BACKEND_URL}/api/stats/in-progress`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

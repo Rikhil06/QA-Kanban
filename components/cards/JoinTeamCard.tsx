@@ -38,17 +38,14 @@ export function JoinTeamCard({
         return;
       }
 
-      const res = await fetch(
-        'https://qa-backend-105l.onrender.com/teams/join',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ code: inviteCode }),
+      const res = await fetch(`${process.env.BACKEND_URL}/teams/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ code: inviteCode }),
+      });
 
       const data = await res.json();
 

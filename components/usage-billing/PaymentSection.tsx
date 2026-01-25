@@ -19,6 +19,8 @@ export function PaymentSection() {
   const { user } = useUser();
   const token = getToken();
 
+  console.log(user);
+
   const { data, isLoading, error } = useSWR(
     token && user?.team?.subscription?.stripeSubscriptionId
       ? [
@@ -29,9 +31,9 @@ export function PaymentSection() {
       : null,
     async ([, subId, token]) => {
       const [invoices, cardDetails] = await Promise.all([
-        fetcher('https://qa-backend-105l.onrender.com/api/invoices', token),
+        fetcher(`${process.env.BACKEND_URL}/api/invoices`, token),
         fetcher(
-          `https://qa-backend-105l.onrender.com/billing/card/subscription/${subId}`,
+          `${process.env.BACKEND_URL}/billing/card/subscription/${subId}`,
           token,
         ),
       ]);
@@ -39,12 +41,6 @@ export function PaymentSection() {
       return { invoices, cardDetails };
     },
   );
-
-  // const invoices = [
-  //   { id: 'INV-2024-12', date: 'Dec 21, 2024', amount: '£12.00', status: 'Paid' },
-  //   { id: 'INV-2024-11', date: 'Nov 21, 2024', amount: '£12.00', status: 'Paid' },
-  //   { id: 'INV-2024-10', date: 'Oct 21, 2024', amount: '£12.00', status: 'Paid' }
-  // ];
 
   if (isLoading) return <p>Loading invoices and card details...</p>;
 

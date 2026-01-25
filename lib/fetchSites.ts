@@ -2,7 +2,7 @@
 
 export async function fetchSites(token: string | undefined) {
   try {
-    const res = await fetch('https://qa-backend-105l.onrender.com/api/sites', {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/sites`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

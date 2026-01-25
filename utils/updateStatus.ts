@@ -6,7 +6,7 @@ export async function updateStatus(
 ) {
   try {
     const res = await fetch(
-      `https://qa-backend-105l.onrender.com/api/report/${reportId}/status`,
+      `${process.env.BACKEND_URL}/api/report/${reportId}/status`,
       {
         method: 'PATCH',
         headers: {

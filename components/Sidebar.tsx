@@ -113,7 +113,7 @@ export default function Sidebar() {
 
     try {
       const response = await fetch(
-        `https://qa-backend-105l.onrender.com/api/site/${siteId}/invite`,
+        `${process.env.BACKEND_URL}/api/site/${siteId}/invite`,
         {
           method: 'POST',
           body: JSON.stringify({ email, teamId }),

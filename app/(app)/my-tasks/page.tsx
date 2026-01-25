@@ -35,18 +35,14 @@ export default function Page() {
   >({
     queryKey: ['issues-summary'],
     queryFn: () =>
-      fetcher(
-        'https://qa-backend-105l.onrender.com/api/stats/issues-summary',
-        token,
-      ),
+      fetcher(`${process.env.BACKEND_URL}/api/stats/issues-summary`, token),
     staleTime: 60 * 1000, // cache for 1 minute
   });
 
   // --- React Query: Tasks ---
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: ['tasks'],
-    queryFn: () =>
-      fetcher('https://qa-backend-105l.onrender.com/api/tasks', token),
+    queryFn: () => fetcher(`${process.env.BACKEND_URL}/api/tasks`, token),
     staleTime: 60 * 1000, // cache for 1 minute
   });
 

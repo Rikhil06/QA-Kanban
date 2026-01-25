@@ -7,7 +7,7 @@ export async function fetchOpenIssues(
 ): Promise<OpenIssuesResponse> {
   try {
     const res = await fetch(
-      'https://qa-backend-105l.onrender.com/api/stats/open-issues',
+      `${process.env.BACKEND_URL}/api/stats/open-issues`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -27,9 +27,7 @@ export function RecentActivity() {
     error,
     isLoading,
   } = useSWR(
-    token
-      ? ['https://qa-backend-105l.onrender.com/api/activities', token]
-      : null,
+    token ? [`${process.env.BACKEND_URL}/api/activities`, token] : null,
     ([url, token]) => fetcher(url, token),
     { refreshInterval: 10000 },
   );

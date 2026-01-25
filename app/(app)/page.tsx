@@ -16,7 +16,7 @@ const token = getToken();
 // }
 
 // async function fetchReports(): Promise<QAReport[]> {
-//   const res = await fetch('https://qa-backend-105l.onrender.com/uploads', { headers: { Authorization: `Bearer ${token}` },cache: 'no-store' });
+//   const res = await fetch(`${process.env.BACKEND_URL}/uploads`, { headers: { Authorization: `Bearer ${token}` },cache: 'no-store' });
 //   if (!res.ok) throw new Error('Failed to fetch reports');
 //   return res.json();
 // }

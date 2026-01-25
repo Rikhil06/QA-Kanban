@@ -24,7 +24,7 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
         'Basic annotations & comments',
         '7-day retention',
       ],
-      highlighted: false
+      highlighted: false,
     },
     {
       id: 'starter' as const,
@@ -40,7 +40,7 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
         'Unlimited comments',
         '90-day retention',
       ],
-      highlighted: false
+      highlighted: false,
     },
     {
       id: 'team' as const,
@@ -55,9 +55,9 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
         'Unlimited screenshots',
         'Long-term storage',
         'Priority processing',
-        'Board-level permissions'
+        'Board-level permissions',
       ],
-      highlighted: true
+      highlighted: true,
     },
     {
       id: 'agency' as const,
@@ -71,13 +71,13 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
         'Client-specific boards',
         'Exports (PDF, Jira, Trello)',
         'SSO',
-        'Custom retention'
+        'Custom retention',
       ],
-      highlighted: false
-    }
+      highlighted: false,
+    },
   ];
 
-  const getPrice = (plan: typeof plans[0]) => {
+  const getPrice = (plan: (typeof plans)[0]) => {
     if (plan.monthlyPrice === null) return null;
     return billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
   };
@@ -86,7 +86,7 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
 
   function getStripePriceId(
     plan: 'free' | 'starter' | 'team' | 'agency',
-    billingPeriod: 'monthly' | 'yearly'
+    billingPeriod: 'monthly' | 'yearly',
   ) {
     const env = process.env;
 
@@ -112,13 +112,12 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
     return priceMap[plan]?.[billingPeriod] ?? null;
   }
 
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
       {plans.map((plan) => {
         const isCurrentPlan = user?.team.plan === plan.id;
         const price = getPrice(plan);
-        
+
         return (
           <div
             key={plan.id}
@@ -130,7 +129,9 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
           >
             {/* Gradient Border Effect */}
             {plan.highlighted && (
-              <div className={`absolute inset-0 rounded-xl bg-linear-to-b ${plan.color} opacity-5`} />
+              <div
+                className={`absolute inset-0 rounded-xl bg-linear-to-b ${plan.color} opacity-5`}
+              />
             )}
 
             <div className="relative p-6">
@@ -139,7 +140,9 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-white">{plan.name}</h3>
                   {isCurrentPlan && (
-                    <div className={`w-2 h-2 rounded-full bg-linear-to-r ${plan.color}`} />
+                    <div
+                      className={`w-2 h-2 rounded-full bg-linear-to-r ${plan.color}`}
+                    />
                   )}
                 </div>
                 <p className="text-xs text-white/50">{plan.tag}</p>
@@ -187,15 +190,14 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
                   Join Waitlist
                 </button>
               ) : (
-
-                <UpgradeButton 
+                <UpgradeButton
                   onClick={() => onUpgrade(plan.id)}
-                  teamId={user?.teamId} 
+                  teamId={user?.teamId}
                   priceId={getStripePriceId(plan.id, billingPeriod)!}
                   planName={plan.name}
-                  className={`w-full py-2.5 rounded-lg text-sm transition-all ${plan.highlighted ? 'bg-white text-[#0F0F0F] hover:bg-white/90' : 'bg-[#2C2C2C] text-white hover:bg-[#333] border border-white/8' }`}
+                  className={`w-full py-2.5 rounded-lg text-sm transition-all ${plan.highlighted ? 'bg-white text-[#0F0F0F] hover:bg-white/90' : 'bg-[#2C2C2C] text-white hover:bg-[#333] border border-white/8'}`}
                   disabled={isCurrentPlan && true}
-                  currentPlan={Capitalize(user?.team?.plan) ?? "Free"}
+                  currentPlan={Capitalize(user?.team?.plan) ?? 'Free'}
                 />
               )}
             </div>

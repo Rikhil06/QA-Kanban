@@ -33,7 +33,7 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
       }
 
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/teams/${teamId}/invite-email`,
+        `${process.env.BACKEND_URL}/teams/${teamId}/invite-email`,
         {
           method: 'POST',
           headers: {

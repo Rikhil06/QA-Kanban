@@ -9,7 +9,7 @@ export default function ReportsThisWeekCard() {
   const token = getToken();
 
   useEffect(() => {
-    fetch('https://qa-backend-105l.onrender.com/api/stats/reports-this-week', {
+    fetch(`${process.env.BACKEND_URL}/api/stats/reports-this-week`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

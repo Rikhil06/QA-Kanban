@@ -12,7 +12,7 @@ export default function ResolvedIssuesCard() {
     const fetchResolvedIssues = async () => {
       try {
         const res = await fetch(
-          'https://qa-backend-105l.onrender.com/api/stats/resolved',
+          `${process.env.BACKEND_URL}/api/stats/resolved`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -57,12 +57,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const res = await fetch(
-        'https://qa-backend-105l.onrender.com/api/auth/me',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!res.ok) throw new Error();
       const data = await res.json();

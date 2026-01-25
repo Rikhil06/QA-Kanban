@@ -40,9 +40,7 @@ export function UsersTasks() {
   const token = getToken();
 
   const { data: tasks, isLoading } = useSWR(
-    token
-      ? ['https://qa-backend-105l.onrender.com/api/users-tasks', token]
-      : null,
+    token ? [`${process.env.BACKEND_URL}/api/users-tasks`, token] : null,
     ([url, token]) => fetcher(url, token),
   );
 

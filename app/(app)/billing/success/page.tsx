@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { getToken } from "@/lib/auth";
-import { Capitalize } from "@/utils/helpers";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { getToken } from '@/lib/auth';
+import { Capitalize } from '@/utils/helpers';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 type Team = {
   id: string;
@@ -14,16 +14,16 @@ type Team = {
 
 export default function BillingSuccess() {
   const params = useSearchParams();
-  const teamId = params.get("team");
+  const teamId = params.get('team');
   const token = getToken();
 
-  const [status, setStatus] = useState<"pending" | "active">("pending");
-const [data, setData] = useState<Team | null>(null);
+  const [status, setStatus] = useState<'pending' | 'active'>('pending');
+  const [data, setData] = useState<Team | null>(null);
 
   useEffect(() => {
     async function refreshTeam() {
       // Call your /api/auth/me (or team endpoint) to re-fetch plan
-      const res = await fetch("https://qa-backend-105l.onrender.com/api/auth/me", {
+      const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -32,7 +32,7 @@ const [data, setData] = useState<Team | null>(null);
       const data = await res.json();
 
       if (data?.user?.team?.plan) {
-        setStatus("active");
+        setStatus('active');
         setData(data.user.team);
       }
     }
@@ -42,8 +42,13 @@ const [data, setData] = useState<Team | null>(null);
 
   return (
     <div>
-      {status === "pending" && <p>Processing subscription…</p>}
-      {status === "active" && <p>🎉 Subscription activated — you’re on the {Capitalize(data?.plan)} Plan!</p>}
+      {status === 'pending' && <p>Processing subscription…</p>}
+      {status === 'active' && (
+        <p>
+          🎉 Subscription activated — you’re on the {Capitalize(data?.plan)}{' '}
+          Plan!
+        </p>
+      )}
     </div>
   );
 }

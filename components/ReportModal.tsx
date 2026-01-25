@@ -78,14 +78,11 @@ export default function ReportModal({
 
   useEffect(() => {
     const fetchReport = async () => {
-      const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const res = await fetch(`${process.env.BACKEND_URL}/api/report/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
       if (!res.ok) return;
       const data = await res.json();
       setReport(data);
@@ -95,7 +92,7 @@ export default function ReportModal({
 
     const fetchComments = async () => {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+        `${process.env.BACKEND_URL}/api/reports/${id}/comments`,
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -105,7 +102,7 @@ export default function ReportModal({
 
     const fetchStatus = async () => {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}/status`,
+        `${process.env.BACKEND_URL}/api/report/${id}/status`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -120,7 +117,7 @@ export default function ReportModal({
 
     const fetchPriority = async () => {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}/priority`,
+        `${process.env.BACKEND_URL}/api/report/${id}/priority`,
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -137,7 +134,7 @@ export default function ReportModal({
     const fetchUsers = async () => {
       try {
         const res = await fetch(
-          `https://qa-backend-105l.onrender.com/api/site/${siteId}/users`,
+          `${process.env.BACKEND_URL}/api/site/${siteId}/users`,
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -153,7 +150,7 @@ export default function ReportModal({
   const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
     try {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}/status`,
+        `${process.env.BACKEND_URL}/api/report/${id}/status`,
         {
           method: 'PATCH',
           headers: {
@@ -189,7 +186,7 @@ export default function ReportModal({
   ) => {
     try {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}/priority`,
+        `${process.env.BACKEND_URL}/api/report/${id}/priority`,
         {
           method: 'PATCH',
           headers: {
@@ -219,7 +216,7 @@ export default function ReportModal({
   const handleDueDate = async (date: Date | undefined) => {
     try {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/report/${id}/due-date`,
+        `${process.env.BACKEND_URL}/api/report/${id}/due-date`,
         {
           method: 'PATCH',
           headers: {
@@ -284,7 +281,7 @@ export default function ReportModal({
       });
 
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+        `${process.env.BACKEND_URL}/api/reports/${id}/comments`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -330,7 +327,7 @@ export default function ReportModal({
 
     try {
       const res = await fetch(
-        `https://qa-backend-105l.onrender.com/api/reports/${id}/comments`,
+        `${process.env.BACKEND_URL}/api/reports/${id}/comments`,
         {
           method: 'POST',
           headers: {

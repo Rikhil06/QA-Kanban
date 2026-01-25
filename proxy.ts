@@ -18,7 +18,7 @@ export async function proxy(req: NextRequest) {
   let role: string | null = null;
 
   try {
-    const res = await fetch('https://qa-backend-105l.onrender.com/api/auth/me', {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

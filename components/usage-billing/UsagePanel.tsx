@@ -23,12 +23,9 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
       : null,
     async ([, teamId, subId, token]) => {
       const [stats, billingDate] = await Promise.all([
+        fetcher(`${process.env.BACKEND_URL}/api/team/${teamId}/stats`, token),
         fetcher(
-          `https://qa-backend-105l.onrender.com/api/team/${teamId}/stats`,
-          token,
-        ),
-        fetcher(
-          `https://qa-backend-105l.onrender.com/billing/next-renewal/${subId}/`,
+          `${process.env.BACKEND_URL}/billing/next-renewal/${subId}`,
           token,
         ),
       ]);

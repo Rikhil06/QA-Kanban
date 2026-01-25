@@ -15,7 +15,7 @@ export function IssueStatusChart() {
   const token = getToken();
   const { data: issuesSummary, isLoading } = useSWR(
     token
-      ? ['https://qa-backend-105l.onrender.com/api/stats/issues-summary', token]
+      ? [`${process.env.BACKEND_URL}/api/stats/issues-summary`, token]
       : null,
     ([url, token]) => fetcher(url, token),
   );
