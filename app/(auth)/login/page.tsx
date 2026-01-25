@@ -19,12 +19,15 @@ export default function LoginPage() {
   const handleLogin = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
-    const res = await fetch(`${process.env.BACKEND_URL}/api/auth/login`, {
-      mode: 'cors',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`,
+      {
+        mode: 'cors',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      },
+    );
     const data = await res.json();
 
     if (res.ok) {

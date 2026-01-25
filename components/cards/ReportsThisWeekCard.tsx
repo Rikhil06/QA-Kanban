@@ -9,11 +9,14 @@ export default function ReportsThisWeekCard() {
   const token = getToken();
 
   useEffect(() => {
-    fetch(`${process.env.BACKEND_URL}/api/stats/reports-this-week`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/reports-this-week`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    })
+    )
       .then((res) => res.json())
       .then((data) => setCount(data.reportsThisWeek))
       .catch((err) => console.error('Failed to fetch reports this week', err));

@@ -27,7 +27,9 @@ export function RecentActivity() {
     error,
     isLoading,
   } = useSWR(
-    token ? [`${process.env.BACKEND_URL}/api/activities`, token] : null,
+    token
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities`, token]
+      : null,
     ([url, token]) => fetcher(url, token),
     { refreshInterval: 10000 },
   );

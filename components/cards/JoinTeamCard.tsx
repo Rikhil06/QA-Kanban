@@ -38,14 +38,17 @@ export function JoinTeamCard({
         return;
       }
 
-      const res = await fetch(`${process.env.BACKEND_URL}/teams/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code: inviteCode }),
         },
-        body: JSON.stringify({ code: inviteCode }),
-      });
+      );
 
       const data = await res.json();
 

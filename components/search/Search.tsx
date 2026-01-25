@@ -27,7 +27,7 @@ export default function SearchBar() {
 
     try {
       const res = await fetch(
-        `${process.env.BACKEND_URL}/api/search?q=${encodeURIComponent(q)}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/search?q=${encodeURIComponent(q)}`,
         {
           headers: {
             'Content-Type': 'application/json',

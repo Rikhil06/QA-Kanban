@@ -57,7 +57,7 @@ export default function SiteReportsPage() {
     queryKey: ['reports', slug, user?.teamId],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.BACKEND_URL}/api/site/${slug}?teamId=${user?.teamId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}?teamId=${user?.teamId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -68,7 +68,7 @@ export default function SiteReportsPage() {
       await Promise.all(
         reports.map(async (report) => {
           const res = await fetch(
-            `${process.env.BACKEND_URL}/api/reports/${report.id}/comments`,
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${report.id}/comments`,
           );
           commentsMap[report.id] = await res.json();
         }),

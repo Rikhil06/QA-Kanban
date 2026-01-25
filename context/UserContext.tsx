@@ -57,9 +57,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!res.ok) throw new Error();
       const data = await res.json();

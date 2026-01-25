@@ -13,7 +13,7 @@ export const useUser = () => {
       return;
     }
 
-    fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))

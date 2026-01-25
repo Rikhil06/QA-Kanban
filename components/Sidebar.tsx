@@ -113,7 +113,7 @@ export default function Sidebar() {
 
     try {
       const response = await fetch(
-        `${process.env.BACKEND_URL}/api/site/${siteId}/invite`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/invite`,
         {
           method: 'POST',
           body: JSON.stringify({ email, teamId }),

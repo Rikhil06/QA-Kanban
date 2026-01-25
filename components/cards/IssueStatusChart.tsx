@@ -15,7 +15,10 @@ export function IssueStatusChart() {
   const token = getToken();
   const { data: issuesSummary, isLoading } = useSWR(
     token
-      ? [`${process.env.BACKEND_URL}/api/stats/issues-summary`, token]
+      ? [
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary`,
+          token,
+        ]
       : null,
     ([url, token]) => fetcher(url, token),
   );

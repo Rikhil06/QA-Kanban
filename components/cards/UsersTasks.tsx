@@ -40,7 +40,9 @@ export function UsersTasks() {
   const token = getToken();
 
   const { data: tasks, isLoading } = useSWR(
-    token ? [`${process.env.BACKEND_URL}/api/users-tasks`, token] : null,
+    token
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks`, token]
+      : null,
     ([url, token]) => fetcher(url, token),
   );
 

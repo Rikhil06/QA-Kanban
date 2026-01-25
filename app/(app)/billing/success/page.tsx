@@ -23,11 +23,14 @@ export default function BillingSuccess() {
   useEffect(() => {
     async function refreshTeam() {
       // Call your /api/auth/me (or team endpoint) to re-fetch plan
-      const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       const data = await res.json();
 

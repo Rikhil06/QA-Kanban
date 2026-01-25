@@ -6,7 +6,7 @@ export async function updateStatus(
 ) {
   try {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/api/report/${reportId}/status`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${reportId}/status`,
       {
         method: 'PATCH',
         headers: {

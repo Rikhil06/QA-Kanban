@@ -7,7 +7,7 @@ export async function fetchOpenIssues(
 ): Promise<OpenIssuesResponse> {
   try {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/api/stats/open-issues`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/open-issues`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

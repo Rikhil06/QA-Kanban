@@ -12,7 +12,7 @@ export default function ResolvedIssuesCard() {
     const fetchResolvedIssues = async () => {
       try {
         const res = await fetch(
-          `${process.env.BACKEND_URL}/api/stats/resolved`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/resolved`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

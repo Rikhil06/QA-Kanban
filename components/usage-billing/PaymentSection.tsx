@@ -31,9 +31,9 @@ export function PaymentSection() {
       : null,
     async ([, subId, token]) => {
       const [invoices, cardDetails] = await Promise.all([
-        fetcher(`${process.env.BACKEND_URL}/api/invoices`, token),
+        fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, token),
         fetcher(
-          `${process.env.BACKEND_URL}/billing/card/subscription/${subId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/card/subscription/${subId}`,
           token,
         ),
       ]);

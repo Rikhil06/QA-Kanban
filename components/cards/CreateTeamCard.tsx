@@ -46,13 +46,16 @@ export function CreateTeamCard({
       if (logoFile) formData.append('logo', logoFile);
       formData.append('plan', planType);
 
-      const res = await fetch(`${process.env.BACKEND_URL}/teams/create`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/create`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          method: 'POST',
+          body: formData,
         },
-        method: 'POST',
-        body: formData,
-      });
+      );
 
       const data = await res.json();
 

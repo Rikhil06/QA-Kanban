@@ -26,14 +26,16 @@ export function Notifications() {
     error,
     isLoading,
   } = useSWR(
-    token ? [`${process.env.BACKEND_URL}/api/notifications`, token] : null,
+    token
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token]
+      : null,
     ([url, token]) => fetcher(url, token),
     { refreshInterval: 10000 },
   );
 
   async function handleNotificationClick(notificationId: string) {
     await fetch(
-      `${process.env.BACKEND_URL}/api/notifications/${notificationId}/read`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/${notificationId}/read`,
       {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },

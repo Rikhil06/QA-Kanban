@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 export async function deleteReport(reportId: string): Promise<void> {
   try {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/api/report/${reportId}`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${reportId}`,
       {
         method: 'DELETE',
       },

@@ -28,11 +28,14 @@ export default function Page() {
   const { user } = useUser();
 
   useEffect(() => {
-    fetch(`${process.env.BACKEND_URL}/teams/${user?.teamId}/members`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/members`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    })
+    )
       .then((res) => res.json())
       .then((data) => setMembers(data.members))
       .catch((err) => console.error('Failed to fetch reports this week', err));
@@ -43,7 +46,7 @@ export default function Page() {
   useEffect(() => {
     async function loadCode() {
       const res = await fetch(
-        `${process.env.BACKEND_URL}/teams/${user?.teamId}/invite-link`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -81,7 +84,7 @@ export default function Page() {
       }
 
       const res = await fetch(
-        `${process.env.BACKEND_URL}/teams/${user?.teamId}/invite-link`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
         {
           method: 'POST',
           headers: {

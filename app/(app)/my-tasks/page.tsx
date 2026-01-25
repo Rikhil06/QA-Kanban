@@ -35,14 +35,18 @@ export default function Page() {
   >({
     queryKey: ['issues-summary'],
     queryFn: () =>
-      fetcher(`${process.env.BACKEND_URL}/api/stats/issues-summary`, token),
+      fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary`,
+        token,
+      ),
     staleTime: 60 * 1000, // cache for 1 minute
   });
 
   // --- React Query: Tasks ---
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: ['tasks'],
-    queryFn: () => fetcher(`${process.env.BACKEND_URL}/api/tasks`, token),
+    queryFn: () =>
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks`, token),
     staleTime: 60 * 1000, // cache for 1 minute
   });
 

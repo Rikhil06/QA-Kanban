@@ -23,9 +23,12 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
       : null,
     async ([, teamId, subId, token]) => {
       const [stats, billingDate] = await Promise.all([
-        fetcher(`${process.env.BACKEND_URL}/api/team/${teamId}/stats`, token),
         fetcher(
-          `${process.env.BACKEND_URL}/billing/next-renewal/${subId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/team/${teamId}/stats`,
+          token,
+        ),
+        fetcher(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/next-renewal/${subId}`,
           token,
         ),
       ]);

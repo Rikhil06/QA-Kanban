@@ -42,7 +42,7 @@ export default function SitesPage() {
 
   async function toggleSiteArchive(id: string, shouldArchive: boolean) {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/api/site/${id}/archive`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/archive`,
       {
         method: 'PATCH',
         headers: {
@@ -68,14 +68,17 @@ export default function SitesPage() {
   }
 
   async function pinSite(id: string) {
-    const res = await fetch(`${process.env.BACKEND_URL}/api/site/${id}/pin`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/pin`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isPinned: true }),
       },
-      body: JSON.stringify({ isPinned: true }),
-    });
+    );
 
     setSites((prev) =>
       prev.map((site) =>
@@ -99,13 +102,16 @@ export default function SitesPage() {
   }
 
   async function unpinSite(id: string) {
-    const res = await fetch(`${process.env.BACKEND_URL}/api/site/${id}/unpin`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/unpin`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     setSites((prev) =>
       prev.map((site) =>
@@ -157,7 +163,7 @@ export default function SitesPage() {
   );
 
   const handleCreateSite = async (name: string, url: string) => {
-    await fetch('${process.env.BACKEND_URL}/sites/create', {
+    await fetch('${process.env.NEXT_PUBLIC_BACKEND_URL}/sites/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

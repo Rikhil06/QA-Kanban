@@ -40,14 +40,17 @@ export default function UpgradeButton(props: UpgradeButtonProps) {
       setLoading(true);
       onClick?.();
 
-      const res = await fetch(`${process.env.BACKEND_URL}/billing/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ teamId, priceId }),
         },
-        body: JSON.stringify({ teamId, priceId }),
-      });
+      );
 
       const data = await res.json();
 

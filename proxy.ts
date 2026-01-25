@@ -18,13 +18,16 @@ export async function proxy(req: NextRequest) {
   let role: string | null = null;
 
   try {
-    const res = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        // Prevent edge caching
+        cache: 'no-store',
       },
-      // Prevent edge caching
-      cache: 'no-store',
-    });
+    );
 
     if (res.ok) {
       const data = await res.json();

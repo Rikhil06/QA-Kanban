@@ -1,7 +1,7 @@
 export const fetchUsersForSite = async (siteId: string) => {
   try {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/api/site/${siteId}/users`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/users`,
     );
 
     // If response is not OK, fallback immediately

@@ -9,11 +9,14 @@ export default function AvgResolutionTimeCard() {
   const token = getToken();
 
   useEffect(() => {
-    fetch(`${process.env.BACKEND_URL}/api/stats/avg-resolution-time`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/avg-resolution-time`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    })
+    )
       .then((res) => res.json())
       .then((data) => setAvgTime(data.avgResolutionTimeHours))
       .catch((err) =>
