@@ -11,6 +11,7 @@ import { getToken } from '@/lib/auth';
 import Link from 'next/link';
 import { Capitalize } from '@/utils/helpers';
 import { Activity } from '@/types/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const iconMap: Record<string, any> = {
   comment: MessageSquare,
@@ -34,7 +35,8 @@ export function RecentActivity() {
     { refreshInterval: 10000 },
   );
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading)
+    return <Skeleton className="h-[20px] w-[100px] rounded-full" />;
   if (error) return <div>Failed to load activities</div>;
 
   return (

@@ -1,7 +1,11 @@
-import { SocialLoginButtons } from "@/components/authentication/SocialLoginButtons";
-import Link from "next/link";
+import { SocialLoginButtons } from '@/components/authentication/SocialLoginButtons';
+import Link from 'next/link';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen bg-linear-to-br from-[#0F0F0F] to-[#1A1A1A] flex">
       {/* Left Side - Branding & Value Prop */}
@@ -30,7 +34,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 />
               </svg>
             </div>
-            <span className="text-white/90 text-xl tracking-tight">IssueTrack</span>
+            <span className="text-white/90 text-xl tracking-tight">
+              Annoture
+            </span>
           </div>
 
           {/* Value Proposition */}
@@ -50,7 +56,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Trust Indicators */}
         <div className="relative z-10">
-          <p className="text-white/30 text-sm">Used by developers and agencies worldwide</p>
+          <p className="text-white/30 text-sm">
+            Used by developers and agencies worldwide
+          </p>
         </div>
       </div>
 
@@ -80,24 +88,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 />
               </svg>
             </div>
-            <span className="text-white/90 text-xl tracking-tight">IssueTrack</span>
+            <span className="text-white/90 text-xl tracking-tight">
+              Annoture
+            </span>
           </div>
 
           {/* Login Card */}
           <div className="bg-[#1C1C1C] rounded-2xl p-8 sm:p-10 border border-white/8 shadow-2xl">
-
             {children}
-
-            
-
-        
           </div>
 
           {/* Trust & Reassurance */}
           <div className="mt-8 text-center space-y-2">
-            <p className="text-white/20 text-xs">
-              🔒 Secure authentication
-            </p>
+            <p className="text-white/20 text-xs">🔒 Secure authentication</p>
             <p className="text-white/20 text-xs">
               No credit card required for Free plan
             </p>
@@ -105,15 +108,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
           {/* Footer Links */}
           <div className="mt-12 flex items-center justify-center gap-6 text-xs text-white/20">
-            <a href="/privacy-policy" className="hover:text-white/40 transition-colors">
+            <a
+              href="/privacy-policy"
+              className="hover:text-white/40 transition-colors"
+            >
               Privacy Policy
             </a>
             <span>·</span>
-            <a href="terms-and-conditions" className="hover:text-white/40 transition-colors">
+            <a
+              href="terms-and-conditions"
+              className="hover:text-white/40 transition-colors"
+            >
               Terms of Service
             </a>
             <span>·</span>
-            <a href="/support" className="hover:text-white/40 transition-colors">
+            <a
+              href="/support"
+              className="hover:text-white/40 transition-colors"
+            >
               Support
             </a>
           </div>

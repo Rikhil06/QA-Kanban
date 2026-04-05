@@ -202,7 +202,7 @@ export default function Page() {
     if (tasks.length === 0) return null; // skip empty sections
 
     return (
-      <div className="mb-6">
+      <div className="mb-6" key={title}>
         <div className="flex items-center gap-2 pb-3">
           <h3 className="text-sm text-white/50 uppercase tracking-wide">
             {title}
