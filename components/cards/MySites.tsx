@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import slugify from 'slugify';
+import { stripTLD } from '@/utils/stripTLD';
 
 
 export function MySites() {
@@ -43,7 +44,7 @@ export function MySites() {
           <Link
             key={site.id}
             className="group bg-white/3 border border-white/5 rounded-lg p-4 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
-            href={`reports/${slugify(site.siteName, { lower: true })}`}
+            href={`/reports/${stripTLD(site.site)}`}
           >
             <div className="flex items-start gap-3 mb-3">
               <div className={`w-10 h-10 rounded-lg bg-linear-to-br flex from-purple-500 to-blue-500 items-center justify-center shrink-0`}>
