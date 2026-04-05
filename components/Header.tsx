@@ -1,16 +1,26 @@
 'use client';
 
-import { Bell, ChevronDown } from 'lucide-react';
+import { Bell, ChevronDown, Menu } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { getInitials } from '@/utils/helpers';
 import SearchBar from './search/Search';
+import { useSidebar } from '@/context/SidebarContext';
 
 export default function Header() {
   const { user, loading } = useUser();
+  const { toggle } = useSidebar();
 
   if (loading) return null;
   return (
-    <header className="flex-none h-16 bg-[#0A0A0A] border-b border-white/5 px-8 flex items-center justify-between gap-6">
+    <header className="flex-none h-16 bg-[#0A0A0A] border-b border-white/5 px-4 lg:px-8 flex items-center justify-between gap-3 lg:gap-6">
+      {/* Mobile menu button */}
+      <button
+        className="lg:hidden p-2 rounded-lg hover:bg-white/4 transition-all shrink-0"
+        onClick={toggle}
+        aria-label="Toggle menu"
+      >
+        <Menu className="w-5 h-5 text-gray-400" />
+      </button>
       {/* Search Bar */}
       <SearchBar />
       
