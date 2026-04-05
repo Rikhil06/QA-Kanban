@@ -15,8 +15,8 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white">
       {/* Main Content */}
-      <main className="ml-16 min-h-screen">
-        <div className="max-w-7xl mx-auto px-8 py-12">
+      <main className="min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
             <div className="mb-16">
 
             {/* Page Title */}

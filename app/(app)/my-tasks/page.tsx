@@ -328,8 +328,8 @@ export default function Page() {
         // hasActiveFilters={hasActiveFilters}
       />
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-auto">
-          <div className="space-y-px p-6">
+        <div className="flex-1 overflow-auto min-w-0">
+          <div className="space-y-px p-4 lg:p-6">
             {groupBy === 'dueDate' && (
               <>
                 {renderTaskSection('Overdue', overdueTasks)}
@@ -354,7 +354,7 @@ export default function Page() {
               renderTaskSection('All Tasks', dateFilteredTasks)}
           </div>
         </div>
-        <div className="w-72 bg-[#0F0F0F] border-l border-white/8 p-6">
+        <div className="hidden lg:block w-72 bg-[#0F0F0F] border-l border-white/8 p-6">
           <h3 className="text-sm text-white/70 mb-4">Summary</h3>
 
           <div className="space-y-3">

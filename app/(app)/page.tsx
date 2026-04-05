@@ -57,7 +57,7 @@ export default function Page() {
     //     </section>
     //   </div>
     // </main>
-    <div className="flex-1 overflow-y-auto px-8 py-6">
+    <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6">
       <div className="max-w-[1800px] mx-auto">
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

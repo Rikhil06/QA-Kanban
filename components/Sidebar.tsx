@@ -34,7 +34,8 @@ import slugify from 'slugify';
 import { stripTLD } from '@/utils/stripTLD';
 import { Capitalize } from '@/utils/helpers';
 import { useHotkey } from '@/hooks/useHotkey';
-import { Bell, LayoutList, Users } from 'lucide-react';
+import { Bell, LayoutList, Users, X } from 'lucide-react';
+import { useSidebar } from '@/context/SidebarContext';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 
 export default function Sidebar() {
@@ -47,6 +48,7 @@ export default function Sidebar() {
   const [siteLoading, setSiteLoading] = useState<boolean>(true);
   const [users, setUsers] = useState<Site[]>([]);
   const [email, setEmail] = useState<string>('');
+  const { isOpen, close } = useSidebar();
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] =
     useState<boolean>(false);
   const [openShareDropdown, setOpenShareDropdown] = useState<boolean>(false);
@@ -141,10 +143,14 @@ export default function Sidebar() {
   if (loading) return null;
 
   return (
-    <aside className="bg-[#0a0a0a] border-r border-white/5 w-2/12 h-full z-50">
+    <aside className={`bg-[#0a0a0a] border-r border-white/5 h-full z-50 flex-none
+      fixed inset-y-0 left-0 w-64 transform transition-transform duration-300 ease-in-out
+      lg:relative lg:inset-auto lg:w-2/12 lg:translate-x-0
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <Link
-        className="h-16 px-6 flex items-center border-b border-white/5"
+        className="h-16 px-6 flex items-center justify-between border-b border-white/5"
         href="/"
+        onClick={close}
       >
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-linear-to-br from-purple-500 to-blue-500 flex items-center justify-center">
@@ -167,12 +173,19 @@ export default function Sidebar() {
           </div>
           <span className="tracking-tight text-gray-100">QA Board</span>
         </div>
+        <button
+          className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/8"
+          onClick={(e) => { e.preventDefault(); close(); }}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </Link>
       <div className="flex flex-col justify-between px-3 py-4 h-[calc(100%-64px)]">
         <div className="flex flex-col gap-1">
           <Link
             className={`flex items-center gap-3 w-full p-2 text-sm px-3 py-2 rounded-lg transition-all text-white shadow-lg ${pathname !== '/' ? 'hover:text-gray-200 hover:bg-white/4' : ''} ${pathname == '/' ? 'bg-white/8 text-white shadow-white/5' : ''} `}
             href="/"
+            onClick={close}
           >
             <IoHome />
             <p className="text-md">Home</p>
