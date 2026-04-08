@@ -121,8 +121,11 @@ export default function SiteReportsPage() {
       if (!res.ok) throw new Error('Failed to create column');
       return res.json() as Promise<CustomColumn>;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns', slug] });
+    onSuccess: (newColumn) => {
+      queryClient.setQueryData<CustomColumn[]>(
+        ['columns', slug, user?.teamId],
+        (old = []) => [...old, newColumn],
+      );
       setNewColumnName('');
       setIsAddingColumn(false);
     },
