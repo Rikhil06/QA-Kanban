@@ -115,7 +115,7 @@ export default function SiteReportsPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, teamId: user?.teamId }),
         },
       );
       if (!res.ok) throw new Error('Failed to create column');
