@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   DragDropContext,
@@ -17,8 +17,14 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Clock, FileText } from 'lucide-react';
+import { Bug, Check, Clock, FileText, Plus, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
+
+type CustomColumn = {
+  id: string;
+  name: string;
+  slug: string;
+};
 
 export default function SiteReportsPage() {
   const router = useRouter();
@@ -39,6 +45,9 @@ export default function SiteReportsPage() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
+  const newColumnInputRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
 
@@ -82,6 +91,49 @@ export default function SiteReportsPage() {
   const reports = data?.reports || [];
   const commentsByReportId = data?.comments || {};
 
+  // -------------------- Fetch Custom Columns --------------------
+  const { data: customColumns = [] } = useQuery<CustomColumn[]>({
+    queryKey: ['columns', slug],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!slug,
+  });
+
+  const createColumnMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name }),
+        },
+      );
+      if (!res.ok) throw new Error('Failed to create column');
+      return res.json() as Promise<CustomColumn>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns', slug] });
+      setNewColumnName('');
+      setIsAddingColumn(false);
+    },
+  });
+
+  const handleCreateColumn = () => {
+    const name = newColumnName.trim();
+    if (!name) return;
+    createColumnMutation.mutate(name);
+  };
+
   // -------------------------
   // Mutation for drag/drop status updates
   // -------------------------
@@ -91,7 +143,7 @@ export default function SiteReportsPage() {
       newStatus,
     }: {
       reportId: string;
-      newStatus: ColumnId;
+      newStatus: string;
     }) => updateStatus(token, reportId, newStatus),
     onMutate: async ({ reportId, newStatus }) => {
       await queryClient.cancelQueries({
@@ -170,7 +222,7 @@ export default function SiteReportsPage() {
       return sortOrder === 'newest' ? db - da : da - db;
     });
 
-    return {
+    const baseColumns: Record<string, { name: string; items: Report[]; columnColour: { bgColour: string; accentColour: string }[] }> = {
       new: {
         name: 'New',
         items: sorted.filter((r) => r.status === 'new'),
@@ -193,7 +245,19 @@ export default function SiteReportsPage() {
         ],
       },
     };
-  }, [filteredReports, sortOrder]);
+
+    for (const col of customColumns) {
+      baseColumns[col.id] = {
+        name: col.name,
+        items: sorted.filter((r) => r.status === col.id),
+        columnColour: [
+          { bgColour: 'bg-violet-100', accentColour: 'border-l-violet-500' },
+        ],
+      };
+    }
+
+    return baseColumns;
+  }, [filteredReports, sortOrder, customColumns]);
 
   // -------------------- Drag & Drop --------------------
   const onDragEnd = (result: DropResult) => {
@@ -205,7 +269,7 @@ export default function SiteReportsPage() {
     )
       return;
 
-    const newStatus = destination.droppableId as ColumnId;
+    const newStatus = destination.droppableId as string;
     mutation.mutate({ reportId: draggableId, newStatus });
   };
 
@@ -340,6 +404,53 @@ export default function SiteReportsPage() {
             </Droppable>
           ))}
         </DragDropContext>
+
+        {isAddingColumn ? (
+          <div className="flex min-w-[280px] flex-col rounded-xl border border-white/10 bg-[#1C1C1C]/60 p-3">
+            <input
+              ref={newColumnInputRef}
+              autoFocus
+              value={newColumnName}
+              onChange={(e) => setNewColumnName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateColumn();
+                if (e.key === 'Escape') {
+                  setIsAddingColumn(false);
+                  setNewColumnName('');
+                }
+              }}
+              placeholder="Column name..."
+              className="mb-2.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCreateColumn}
+                disabled={!newColumnName.trim() || createColumnMutation.isPending}
+                className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-3 py-1.5 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/30 disabled:opacity-40"
+              >
+                <Check className="h-3 w-3" />
+                {createColumnMutation.isPending ? 'Adding...' : 'Add column'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingColumn(false);
+                  setNewColumnName('');
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white/60"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsAddingColumn(true)}
+            className="flex min-w-[52px] flex-col items-center justify-center gap-1.5 self-start rounded-xl border border-dashed border-white/8 bg-transparent px-4 py-3 text-white/30 transition-all hover:border-white/15 hover:bg-white/[0.03] hover:text-white/50"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-xs">Add</span>
+          </button>
+        )}
 
         {selectedId && (
           <ReportModal
