@@ -13,7 +13,6 @@ import {
   IoLogOutOutline,
   IoLogInOutline,
   IoShareOutline,
-  IoClose,
 } from 'react-icons/io5';
 import { TbMessageReport } from 'react-icons/tb';
 import { RiSettings3Line } from 'react-icons/ri';
@@ -26,6 +25,7 @@ import { FaChartPie } from 'react-icons/fa';
 import { IoIosNotificationsOutline } from 'react-icons/io';
 import { FiMessageSquare } from 'react-icons/fi';
 import { CiShare1 } from 'react-icons/ci';
+import { toast, ToastContainer } from 'react-toastify';
 
 import { fetchSites } from '@/lib/fetchSites';
 import { Site } from '@/types/types';
@@ -48,6 +48,7 @@ export default function Sidebar() {
   const [siteLoading, setSiteLoading] = useState<boolean>(true);
   const [users, setUsers] = useState<Site[]>([]);
   const [email, setEmail] = useState<string>('');
+  const [isInviting, setIsInviting] = useState<boolean>(false);
   const { isOpen, close } = useSidebar();
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] =
     useState<boolean>(false);
@@ -112,7 +113,9 @@ export default function Sidebar() {
     email: string,
   ) {
     e.preventDefault();
+    if (!email.trim()) return;
 
+    setIsInviting(true);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/invite`,
@@ -126,16 +129,28 @@ export default function Sidebar() {
         },
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to send invitation');
-      }
+      if (!response.ok) throw new Error('Failed to send invitation');
 
-      alert('Invitation sent');
+      toast.success(`Invite sent to ${email}`);
+      setEmail('');
     } catch (error) {
       console.error('Error inviting user:', error);
-      alert('Failed to send invitation');
+      toast.error('Failed to send invitation. Please try again.');
+    } finally {
+      setIsInviting(false);
     }
   }
+
+  const getInitials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const AVATAR_COLOURS = [
+    'from-violet-500 to-purple-600',
+    'from-blue-500 to-indigo-600',
+    'from-emerald-500 to-teal-600',
+    'from-orange-500 to-amber-600',
+    'from-pink-500 to-rose-600',
+  ];
 
   // if (siteLoading) return <p className="text-gray-500">Loading sites...</p>;
   // if (!sites.length) return <p className="text-gray-500">No sites found.</p>;
@@ -167,6 +182,8 @@ export default function Sidebar() {
     );
 
   return (
+    <>
+    <ToastContainer position="bottom-right" pauseOnFocusLoss draggable pauseOnHover />
     <aside className={`bg-[#0a0a0a] border-r border-white/5 h-full z-50 flex-none
       fixed inset-y-0 left-0 w-64 transform transition-transform duration-300 ease-in-out
       lg:relative lg:inset-auto lg:w-2/12 lg:translate-x-0
@@ -320,98 +337,123 @@ export default function Sidebar() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-60"
+                    className="fixed inset-0 z-60 flex items-center justify-center p-4"
+                    onClick={() => setOpenShareDropdown(false)}
                   >
-                    <div className="fixed bg-[#3b3b3a] inset-0 z-60 opacity-55"></div>
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+                    {/* Modal */}
                     <motion.div
-                      className="fixed bg-[#3b3b3a] px-2.5 py-4 top-2/4 left-2/4 -translate-2/4 w-2/4 z-61 rounded-lg"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      className="relative w-full max-w-md rounded-2xl border border-white/8 bg-[#1C1C1C] shadow-2xl shadow-black/60 z-61"
+                      initial={{ scale: 0.95, opacity: 0, y: 8 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.95, opacity: 0, y: 8 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex justify-between items-center mb-3 text-gray-100">
-                        <h2 className="text-lg">Invite Users</h2>
-                        <IoClose
-                          className="cursor-pointer"
-                          size={30}
+                      {/* Header */}
+                      <div className="flex items-center justify-between border-b border-white/6 px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5">
+                            <IoShareOutline className="text-white/60" size={14} />
+                          </div>
+                          <div>
+                            <h2 className="text-sm font-medium text-white/90">Invite to board</h2>
+                            <p className="text-xs text-white/40">{siteId}</p>
+                          </div>
+                        </div>
+                        <button
                           onClick={() => setOpenShareDropdown(false)}
-                        />
+                          className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/6 hover:text-white/70"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
-                      <form
-                        onSubmit={(e) => {
-                          if (!siteId) {
-                            alert('Missing site ID');
-                            return;
-                          }
-                          handleInviteSubmit(e, siteId, email);
-                        }}
-                      >
-                        {/* <label htmlFor="email" className='mb-2 block text-gray-100 text-sm '>Invite users</label>       */}
-                        <div className="flex gap-1">
-                          <input
-                            type="email"
-                            name="email"
-                            id="email"
-                            autoComplete="email"
-                            className="bg-[#303030] text-gray-100 rounded-lg px-2 py-4 w-full text-sm"
-                            placeholder="Add email"
-                            onChange={(e) => setEmail(e.target.value)}
-                            // pattern='/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/'
-                          />
-                          <button className="bg-[#1f1f1e] border border-[#797979] rounded-lg px-10 py-1 text-sm text-gray-100 cursor-pointer">
-                            Send
-                          </button>
-                        </div>
-                      </form>
-                      <div>
-                        {/* <h3>Users from the {siteId} Board</h3> */}
-                        <div className="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-lg text-gray-100 mt-2">
-                          <table className="w-full text-sm text-left rtl:text-right text-body">
-                            <thead className="text-sm text-body bg-neutral-secondary-medium border-b border-default-medium border-[#2b2b2b]">
-                              <tr>
-                                <th scope="col" className="px-6 py-3">
-                                  Name
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                  Email
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                  Verified
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {users.map((site) => (
-                                <tr
-                                  key={site.id}
-                                  className="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium border-[#2b2b2b]"
+
+                      {/* Invite form */}
+                      <div className="p-5">
+                        <form
+                          onSubmit={(e) => {
+                            if (!siteId) {
+                              toast.error('Missing site ID');
+                              return;
+                            }
+                            handleInviteSubmit(e, siteId, email);
+                          }}
+                        >
+                          <label className="mb-1.5 block text-xs text-white/40">
+                            Email address
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              name="email"
+                              id="invite-email"
+                              autoComplete="email"
+                              value={email}
+                              required
+                              className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition-colors focus:border-white/20"
+                              placeholder="colleague@company.com"
+                              onChange={(e) => setEmail(e.target.value)}
+                            />
+                            <button
+                              type="submit"
+                              disabled={isInviting || !email.trim()}
+                              className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black transition-all hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {isInviting ? (
+                                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                </svg>
+                              ) : (
+                                <IoShareOutline size={13} />
+                              )}
+                              {isInviting ? 'Sending…' : 'Invite'}
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* Members list */}
+                        {users.length > 0 && (
+                          <div className="mt-5">
+                            <p className="mb-3 text-xs text-white/40">
+                              Board members · {users.length}
+                            </p>
+                            <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-0.5">
+                              {users.map((u, i) => (
+                                <div
+                                  key={u.id}
+                                  className="flex items-center gap-3 rounded-xl border border-white/6 bg-white/[0.03] px-3 py-2.5"
                                 >
-                                  <th
-                                    scope="row"
-                                    className="px-6 py-4 font-medium text-heading whitespace-nowrap"
-                                  >
-                                    {site.name}
-                                  </th>
-                                  <td className="px-6 py-4">{site.email}</td>
-                                  <td className="px-6 py-4">Yes</td>
-                                </tr>
+                                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br ${AVATAR_COLOURS[i % AVATAR_COLOURS.length]} text-xs font-medium text-white`}>
+                                    {getInitials(u.name)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm text-white/80">{u.name}</p>
+                                    <p className="truncate text-xs text-white/40">{u.email}</p>
+                                  </div>
+                                  <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-400">
+                                    Active
+                                  </span>
+                                </div>
                               ))}
-                            </tbody>
-                          </table>
-                        </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   </motion.div>
                 )}
-                <button
-                  className="flex items-center gap-2 w-full p-2 text-gray-100 text-sm font-semibold cursor-pointer"
-                  onClick={() => setOpenShareDropdown(true)}
-                >
-                  <IoShareOutline />
-                  <p className="text-md">Invite users</p>
-                </button>
               </AnimatePresence>
+              <button
+                className="flex items-center gap-2 w-full p-2 text-gray-100 text-sm font-semibold cursor-pointer"
+                onClick={() => setOpenShareDropdown(true)}
+              >
+                <IoShareOutline />
+                <p className="text-md">Invite users</p>
+              </button>
             </div>
           ) : null}
           <Link
@@ -494,5 +536,6 @@ export default function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }
