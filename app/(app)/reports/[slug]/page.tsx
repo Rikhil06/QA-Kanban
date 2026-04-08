@@ -93,10 +93,10 @@ export default function SiteReportsPage() {
 
   // -------------------- Fetch Custom Columns --------------------
   const { data: customColumns = [] } = useQuery<CustomColumn[]>({
-    queryKey: ['columns', slug],
+    queryKey: ['columns', slug, user?.teamId],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns?teamId=${user?.teamId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (!res.ok) return [];
