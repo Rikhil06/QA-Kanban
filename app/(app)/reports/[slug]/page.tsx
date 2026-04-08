@@ -17,7 +17,7 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, Clock, FileText, Plus, X } from 'lucide-react';
+import { Bug, Check, Clock, FileText, Plus, Trash2, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 
 type CustomColumn = {
@@ -133,6 +133,24 @@ export default function SiteReportsPage() {
     if (!name) return;
     createColumnMutation.mutate(name);
   };
+
+  const deleteColumnMutation = useMutation({
+    mutationFn: async (columnId: string) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/${columnId}?teamId=${user?.teamId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!res.ok) throw new Error('Failed to delete column');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns', slug, user?.teamId] });
+    },
+  });
+
+  const BASE_COLUMN_IDS = new Set(['new', 'inProgress', 'done']);
 
   // -------------------------
   // Mutation for drag/drop status updates
@@ -321,13 +339,39 @@ export default function SiteReportsPage() {
                   ref={provided.innerRef}
                   className="flex min-w-[320px] flex-col rounded-xl border transition-colors border-white/6 bg-[#1C1C1C]/40"
                 >
-                  <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
+                  <div className="group/header flex items-center justify-between border-b border-white/6 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <h2 className="text-sm text-white/90">{column.name}</h2>
                       <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
                         {column.items.length}
                       </p>
                     </div>
+                    {!BASE_COLUMN_IDS.has(id) && (
+                      <div className="relative opacity-0 transition-opacity group-hover/header:opacity-100">
+                        {column.items.length === 0 ? (
+                          <button
+                            onClick={() => deleteColumnMutation.mutate(id)}
+                            disabled={deleteColumnMutation.isPending}
+                            className="rounded-md p-1 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
+                            title="Delete column"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        ) : (
+                          <div className="group/tooltip relative">
+                            <button
+                              disabled
+                              className="cursor-not-allowed rounded-md p-1 text-white/15"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                            <div className="pointer-events-none absolute right-0 top-7 z-10 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] px-2.5 py-1.5 text-[11px] text-white/50 opacity-0 shadow-xl transition-opacity group-hover/tooltip:opacity-100">
+                              Move all reports out of this column before deleting
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 space-y-2 overflow-y-auto p-3">
                     {column.items.map((item, index) => (
