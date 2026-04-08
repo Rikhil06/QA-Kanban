@@ -15,7 +15,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <MobileBackdrop />
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">
               <Header />
-              <main className="relative overflow-y-auto">
+              <main className="relative overflow-y-auto h-full">
                 {children}
               </main>
             </div>

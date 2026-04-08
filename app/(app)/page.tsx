@@ -81,36 +81,27 @@ export default function Page() {
     //     </section>
     //   </div>
     // </main>
-    <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6">
-      <div className="max-w-[1800px] mx-auto">
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Tasks */}
-          <div className="lg:col-span-2 space-y-6">
+    <div className="flex-1 overflow-hidden flex flex-col px-4 lg:px-8 py-4 lg:py-6 h-full">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+        {/* Left Column */}
+        <div className="lg:col-span-2 flex flex-col gap-6 min-h-0">
+          <div className="flex-[2] min-h-0">
             <UsersTasks />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 auto-rows-fr">
-              <RecentActivity />
-              <IssueStatusChart />
-            </div>
-            {/* <MySites />
-            <RecentScreenshots /> */}
           </div>
-
-          {/* Right Column - Sidebar Widgets */}
-          <div className="space-y-6">
-            {/* <QuickActions /> */}
-            <Notifications />
-            <MySites />
-            {/* <UpcomingDeadlines />
+          <div className="flex-[3] grid grid-cols-1 sm:grid-cols-2 gap-6 min-h-0">
+            <RecentActivity />
             <IssueStatusChart />
-            <TeamOverview /> */}
           </div>
         </div>
 
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {/* <RecentActivity />
-          <UnsortedScreenshots /> */}
+        {/* Right Column */}
+        <div className="flex flex-col gap-6 min-h-0">
+          <div className="flex-1 min-h-0">
+            <Notifications />
+          </div>
+          <div className="flex-1 min-h-0">
+            <MySites />
+          </div>
         </div>
       </div>
     </div>

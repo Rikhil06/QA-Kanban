@@ -30,13 +30,13 @@ export function IssueStatusChart() {
   );
 
   return (
-    <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="mb-6">
         <h2 className="text-white mb-1">Issue Status</h2>
         <p className="text-sm text-gray-500">{total} total issues</p>
       </div>
 
-      <div className="relative h-48 mb-6">
+      <div className="relative flex-1 min-h-0 mb-4">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

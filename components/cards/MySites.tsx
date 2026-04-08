@@ -28,7 +28,7 @@ export function MySites() {
     getSites();
   }, []);
   return (
-    <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-white mb-1">My Sites</h2>
@@ -39,7 +39,7 @@ export function MySites() {
         </Link>
       </div>
       
-      <div className="flex flex-col gap-4 max-h-58 overflow-y-scroll custom-scrollbar pr-2.5">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2.5">
         {sites.map((site) => (
           <Link
             key={site.id}

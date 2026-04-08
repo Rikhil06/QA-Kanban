@@ -72,7 +72,7 @@ export function UsersTasks() {
   if (isLoading) return <p className="text-white">Loading...</p>;
 
   return (
-    <div className="bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-white mb-1 font-semibold">My Tasks</h2>
@@ -89,7 +89,7 @@ export function UsersTasks() {
       </div>
 
       {tasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
             <CheckCircle2 className="w-8 h-8 text-gray-600" />
           </div>
@@ -99,7 +99,7 @@ export function UsersTasks() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3 max-h-80 overflow-y-scroll custom-scrollbar pr-2.5">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar pr-2.5">
           {tasks.map((task: Task) => {
             const priorityStyle =
               priorityConfig[normalizePriority(task.priority)];
