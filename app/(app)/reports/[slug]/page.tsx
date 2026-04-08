@@ -17,7 +17,7 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, Clock, FileText, GripVertical, Plus, Trash2, X } from 'lucide-react';
+import { Bug, Check, ChevronLeft, Clock, FileText, GripVertical, Plus, Trash2, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 
 type CustomColumn = {
@@ -53,6 +53,15 @@ export default function SiteReportsPage() {
 
   // -------------------- Column order --------------------
   const [columnOrder, setColumnOrder] = useState<string[]>(['new', 'inProgress', 'done']);
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
   const orderInitialized = useRef(false);
 
   const queryClient = useQueryClient();
@@ -444,145 +453,198 @@ export default function SiteReportsPage() {
                       index={colIndex}
                       key={id}
                     >
-                      {(colProvided, colSnapshot) => (
-                        <div
-                          ref={colProvided.innerRef}
-                          {...colProvided.draggableProps}
-                          className={`flex min-w-[320px] flex-col rounded-xl border transition-colors border-white/6 bg-[#1C1C1C]/40 ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
-                        >
-                          {/* Column header — drag handle */}
+                      {(colProvided, colSnapshot) => {
+                        const isCollapsed = collapsedColumns.has(id);
+                        return (
                           <div
-                            {...colProvided.dragHandleProps}
-                            className="group/header flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-3 active:cursor-grabbing"
+                            ref={colProvided.innerRef}
+                            {...colProvided.draggableProps}
+                            className={`flex flex-col rounded-xl border transition-all duration-200 border-white/6 bg-[#1C1C1C]/40 ${isCollapsed ? 'w-14 min-w-[3.5rem]' : 'min-w-[320px]'} ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
                           >
-                            <div className="flex items-center gap-2">
-                              <GripVertical className="h-3.5 w-3.5 shrink-0 text-white/20 transition-colors group-hover/header:text-white/40" />
-                              <h2 className="text-sm text-white/90">
-                                {column.name}
-                              </h2>
-                              <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
-                                {column.items.length}
-                              </p>
-                            </div>
-                            {!BASE_COLUMN_IDS.has(id) && (
-                              <div className="relative opacity-0 transition-opacity group-hover/header:opacity-100">
-                                {column.items.length === 0 ? (
-                                  <button
-                                    onClick={() =>
-                                      deleteColumnMutation.mutate(id)
-                                    }
-                                    disabled={deleteColumnMutation.isPending}
-                                    className="rounded-md p-1 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
-                                    title="Delete column"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                ) : (
-                                  <div className="group/tooltip relative">
-                                    <button
-                                      disabled
-                                      className="cursor-not-allowed rounded-md p-1 text-white/15"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                    <div className="pointer-events-none absolute right-0 top-7 z-10 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] px-2.5 py-1.5 text-[11px] text-white/50 opacity-0 shadow-xl transition-opacity group-hover/tooltip:opacity-100">
-                                      Move all reports out of this column
-                                      before deleting
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Cards */}
-                          <Droppable droppableId={id} type="CARD">
-                            {(provided) => (
+                            {isCollapsed ? (
+                              /* ---- Collapsed view ---- */
                               <div
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                                className="flex-1 space-y-2 overflow-y-auto p-3"
+                                {...colProvided.dragHandleProps}
+                                className="group/header flex h-full cursor-grab flex-col items-center gap-3 px-2 py-4 active:cursor-grabbing"
                               >
-                                {column.items.map((item, index) => (
-                                  <Draggable
-                                    draggableId={item.id}
-                                    index={index}
-                                    key={item.id}
+                                <button
+                                  onClick={() => toggleCollapse(id)}
+                                  className="rounded-md p-1 text-white/30 transition-colors hover:bg-white/6 hover:text-white/60"
+                                  title="Expand column"
+                                >
+                                  <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
+                                </button>
+                                <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                                  <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
+                                    {column.items.length}
+                                  </p>
+                                  <span
+                                    className="whitespace-nowrap text-xs text-white/50 [writing-mode:vertical-rl] rotate-180"
                                   >
-                                    {(provided) => (
-                                      <div
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        ref={provided.innerRef}
-                                        className="group cursor-grab rounded-lg border border-white/8 bg-[#222] p-3.5 shadow-lg transition-all hover:border-white/15 hover:shadow-xl hover:shadow-indigo-500/5"
-                                        style={{
-                                          ...provided.draggableProps.style,
-                                        }}
-                                        onClick={() => openModal(item.id)}
-                                      >
-                                        <div className="mb-2 flex items-start justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <Bug className="h-3.5 w-3.5 shrink-0 text-white/40" />
-                                            <div
-                                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${getPriorityColor(item.priority)}`}
-                                            />
-                                          </div>
-                                          <div className="flex gap-1">
-                                            <span className="rounded bg-white/6 px-1.5 py-0.5 text-[10px] text-white/50">
-                                              {Capitalize(item.type)}
-                                            </span>
-                                          </div>
-                                        </div>
-
-                                        <h4 className="mb-1.5 text-sm text-white/90 group-hover:text-white">
-                                          {item.title}
-                                        </h4>
-                                        {item.comment && (
-                                          <p className="mb-3 text-xs text-white/40 line-clamp-2">
-                                            {item.comment}
-                                          </p>
-                                        )}
-
-                                        {item.pagePath && (
-                                          <div className="mb-3 flex items-center gap-1.5">
-                                            <FileText className="h-3 w-3 text-white/30" />
-                                            <span className="text-xs text-white/50">
-                                              {item.pagePath === '/'
-                                                ? 'Home Page'
-                                                : Capitalize(
-                                                    item.pagePath.replace(
-                                                      /\//g,
-                                                      '',
-                                                    ),
-                                                  ) + ' Page'}
-                                            </span>
-                                          </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1.5 text-xs text-white/40">
-                                            <Clock className="h-3 w-3" />
-                                            <span>
-                                              {formatTimeAgo(item.timestamp)}
-                                            </span>
-                                          </div>
-                                          <div
-                                            className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-[10px] ring-2 ring-[#222] transition-transform group-hover:scale-110"
-                                            title={item.userName}
+                                    {column.name}
+                                  </span>
+                                </div>
+                                {/* Hidden droppable so cards can still be dropped into collapsed columns */}
+                                <Droppable droppableId={id} type="CARD">
+                                  {(provided) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      className="h-0 w-0 overflow-hidden"
+                                    >
+                                      {provided.placeholder}
+                                    </div>
+                                  )}
+                                </Droppable>
+                              </div>
+                            ) : (
+                              /* ---- Expanded view ---- */
+                              <>
+                                {/* Column header — drag handle */}
+                                <div
+                                  {...colProvided.dragHandleProps}
+                                  className="group/header flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-3 active:cursor-grabbing"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <GripVertical className="h-3.5 w-3.5 shrink-0 text-white/20 transition-colors group-hover/header:text-white/40" />
+                                    <h2 className="text-sm text-white/90">
+                                      {column.name}
+                                    </h2>
+                                    <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
+                                      {column.items.length}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => toggleCollapse(id)}
+                                      className="rounded-md p-1 text-white/20 transition-colors hover:bg-white/6 hover:text-white/50"
+                                      title="Collapse column"
+                                    >
+                                      <ChevronLeft className="h-3.5 w-3.5" />
+                                    </button>
+                                    {!BASE_COLUMN_IDS.has(id) && (
+                                      <div className="relative opacity-0 transition-opacity group-hover/header:opacity-100">
+                                        {column.items.length === 0 ? (
+                                          <button
+                                            onClick={() =>
+                                              deleteColumnMutation.mutate(id)
+                                            }
+                                            disabled={deleteColumnMutation.isPending}
+                                            className="rounded-md p-1 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
+                                            title="Delete column"
                                           >
-                                            {getInitials(item.userName)}
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </button>
+                                        ) : (
+                                          <div className="group/tooltip relative">
+                                            <button
+                                              disabled
+                                              className="cursor-not-allowed rounded-md p-1 text-white/15"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                            <div className="pointer-events-none absolute right-0 top-7 z-10 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] px-2.5 py-1.5 text-[11px] text-white/50 opacity-0 shadow-xl transition-opacity group-hover/tooltip:opacity-100">
+                                              Move all reports out of this column
+                                              before deleting
+                                            </div>
                                           </div>
-                                        </div>
+                                        )}
                                       </div>
                                     )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
+                                  </div>
+                                </div>
+
+                                {/* Cards */}
+                                <Droppable droppableId={id} type="CARD">
+                                  {(provided) => (
+                                    <div
+                                      {...provided.droppableProps}
+                                      ref={provided.innerRef}
+                                      className="flex-1 space-y-2 overflow-y-auto p-3"
+                                    >
+                                      {column.items.map((item, index) => (
+                                        <Draggable
+                                          draggableId={item.id}
+                                          index={index}
+                                          key={item.id}
+                                        >
+                                          {(provided) => (
+                                            <div
+                                              {...provided.draggableProps}
+                                              {...provided.dragHandleProps}
+                                              ref={provided.innerRef}
+                                              className="group cursor-grab rounded-lg border border-white/8 bg-[#222] p-3.5 shadow-lg transition-all hover:border-white/15 hover:shadow-xl hover:shadow-indigo-500/5"
+                                              style={{
+                                                ...provided.draggableProps.style,
+                                              }}
+                                              onClick={() => openModal(item.id)}
+                                            >
+                                              <div className="mb-2 flex items-start justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                  <Bug className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                                                  <div
+                                                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${getPriorityColor(item.priority)}`}
+                                                  />
+                                                </div>
+                                                <div className="flex gap-1">
+                                                  <span className="rounded bg-white/6 px-1.5 py-0.5 text-[10px] text-white/50">
+                                                    {Capitalize(item.type)}
+                                                  </span>
+                                                </div>
+                                              </div>
+
+                                              <h4 className="mb-1.5 text-sm text-white/90 group-hover:text-white">
+                                                {item.title}
+                                              </h4>
+                                              {item.comment && (
+                                                <p className="mb-3 text-xs text-white/40 line-clamp-2">
+                                                  {item.comment}
+                                                </p>
+                                              )}
+
+                                              {item.pagePath && (
+                                                <div className="mb-3 flex items-center gap-1.5">
+                                                  <FileText className="h-3 w-3 text-white/30" />
+                                                  <span className="text-xs text-white/50">
+                                                    {item.pagePath === '/'
+                                                      ? 'Home Page'
+                                                      : Capitalize(
+                                                          item.pagePath.replace(
+                                                            /\//g,
+                                                            '',
+                                                          ),
+                                                        ) + ' Page'}
+                                                  </span>
+                                                </div>
+                                              )}
+
+                                              <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1.5 text-xs text-white/40">
+                                                  <Clock className="h-3 w-3" />
+                                                  <span>
+                                                    {formatTimeAgo(item.timestamp)}
+                                                  </span>
+                                                </div>
+                                                <div
+                                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-[10px] ring-2 ring-[#222] transition-transform group-hover:scale-110"
+                                                  title={item.userName}
+                                                >
+                                                  {getInitials(item.userName)}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </Draggable>
+                                      ))}
+                                      {provided.placeholder}
+                                    </div>
+                                  )}
+                                </Droppable>
+                              </>
                             )}
-                          </Droppable>
-                        </div>
-                      )}
+                          </div>
+                        );
+                      }}
                     </Draggable>
                   );
                 })}
