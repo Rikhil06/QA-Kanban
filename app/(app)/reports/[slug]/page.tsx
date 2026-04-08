@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   DragDropContext,
@@ -17,7 +17,7 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, Clock, FileText, Plus, Trash2, X } from 'lucide-react';
+import { Bug, Check, Clock, FileText, GripVertical, Plus, Trash2, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 
 type CustomColumn = {
@@ -25,6 +25,8 @@ type CustomColumn = {
   name: string;
   slug: string;
 };
+
+const BASE_COLUMN_IDS = new Set(['new', 'inProgress', 'done']);
 
 export default function SiteReportsPage() {
   const router = useRouter();
@@ -48,6 +50,10 @@ export default function SiteReportsPage() {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const newColumnInputRef = useRef<HTMLInputElement>(null);
+
+  // -------------------- Column order --------------------
+  const [columnOrder, setColumnOrder] = useState<string[]>(['new', 'inProgress', 'done']);
+  const orderInitialized = useRef(false);
 
   const queryClient = useQueryClient();
 
@@ -105,6 +111,67 @@ export default function SiteReportsPage() {
     enabled: !!slug,
   });
 
+  // -------------------- Fetch Persisted Column Order --------------------
+  const { data: savedOrder } = useQuery<string[] | null>({
+    queryKey: ['column-order', slug, user?.teamId],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/order?teamId=${user?.teamId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.order ?? null;
+    },
+    enabled: !!slug,
+  });
+
+  // Initialise column order once both savedOrder + customColumns have loaded
+  useEffect(() => {
+    if (orderInitialized.current) return;
+    if (savedOrder === undefined) return; // still fetching
+
+    orderInitialized.current = true;
+
+    const knownIds = new Set([
+      'new',
+      'inProgress',
+      'done',
+      ...customColumns.map((c) => c.id),
+    ]);
+
+    if (savedOrder && savedOrder.length > 0) {
+      const validOrder = savedOrder.filter((id) => knownIds.has(id));
+      const extras = [...knownIds].filter((id) => !savedOrder.includes(id));
+      setColumnOrder([...validOrder, ...extras]);
+    } else {
+      setColumnOrder([
+        'new',
+        'inProgress',
+        'done',
+        ...customColumns.map((c) => c.id),
+      ]);
+    }
+  }, [savedOrder, customColumns]);
+
+  // -------------------- Persist Column Order --------------------
+  const persistOrderMutation = useMutation({
+    mutationFn: async (order: string[]) => {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/reorder`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ order, teamId: user?.teamId }),
+        },
+      );
+    },
+  });
+
+  // -------------------- Create Column --------------------
   const createColumnMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch(
@@ -126,6 +193,11 @@ export default function SiteReportsPage() {
         ['columns', slug, user?.teamId],
         (old = []) => [...old, newColumn],
       );
+      setColumnOrder((prev) => {
+        const next = [...prev, newColumn.id];
+        persistOrderMutation.mutate(next);
+        return next;
+      });
       setNewColumnName('');
       setIsAddingColumn(false);
     },
@@ -137,6 +209,7 @@ export default function SiteReportsPage() {
     createColumnMutation.mutate(name);
   };
 
+  // -------------------- Delete Column --------------------
   const deleteColumnMutation = useMutation({
     mutationFn: async (columnId: string) => {
       const res = await fetch(
@@ -148,12 +221,15 @@ export default function SiteReportsPage() {
       );
       if (!res.ok) throw new Error('Failed to delete column');
     },
-    onSuccess: () => {
+    onSuccess: (_data, columnId) => {
       queryClient.invalidateQueries({ queryKey: ['columns', slug, user?.teamId] });
+      setColumnOrder((prev) => {
+        const next = prev.filter((id) => id !== columnId);
+        persistOrderMutation.mutate(next);
+        return next;
+      });
     },
   });
-
-  const BASE_COLUMN_IDS = new Set(['new', 'inProgress', 'done']);
 
   // -------------------------
   // Mutation for drag/drop status updates
@@ -243,7 +319,14 @@ export default function SiteReportsPage() {
       return sortOrder === 'newest' ? db - da : da - db;
     });
 
-    const baseColumns: Record<string, { name: string; items: Report[]; columnColour: { bgColour: string; accentColour: string }[] }> = {
+    const baseColumns: Record<
+      string,
+      {
+        name: string;
+        items: Report[];
+        columnColour: { bgColour: string; accentColour: string }[];
+      }
+    > = {
       new: {
         name: 'New',
         items: sorted.filter((r) => r.status === 'new'),
@@ -282,7 +365,7 @@ export default function SiteReportsPage() {
 
   // -------------------- Drag & Drop --------------------
   const onDragEnd = (result: DropResult) => {
-    const { source, destination, draggableId } = result;
+    const { source, destination, draggableId, type } = result;
     if (
       !destination ||
       (source.droppableId === destination.droppableId &&
@@ -290,6 +373,17 @@ export default function SiteReportsPage() {
     )
       return;
 
+    if (type === 'COLUMN') {
+      const colId = draggableId.replace('column-', '');
+      const newOrder = Array.from(columnOrder);
+      newOrder.splice(source.index, 1);
+      newOrder.splice(destination.index, 0, colId);
+      setColumnOrder(newOrder);
+      persistOrderMutation.mutate(newOrder);
+      return;
+    }
+
+    // Card drag — update report status
     const newStatus = destination.droppableId as string;
     mutation.mutate({ reportId: draggableId, newStatus });
   };
@@ -332,172 +426,223 @@ export default function SiteReportsPage() {
         users={users}
         pages={uniquePages}
       />
-      <div className="flex h-[calc(100vh-7.5rem)] gap-4 overflow-x-auto px-6 py-6">
+      <div className="flex h-[calc(100vh-7.5rem)] overflow-x-auto">
         <DragDropContext onDragEnd={onDragEnd}>
-          {Object.entries(columns).map(([id, column]) => (
-            <Droppable droppableId={id} key={id}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="flex min-w-[320px] flex-col rounded-xl border transition-colors border-white/6 bg-[#1C1C1C]/40"
-                >
-                  <div className="group/header flex items-center justify-between border-b border-white/6 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-sm text-white/90">{column.name}</h2>
-                      <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
-                        {column.items.length}
-                      </p>
-                    </div>
-                    {!BASE_COLUMN_IDS.has(id) && (
-                      <div className="relative opacity-0 transition-opacity group-hover/header:opacity-100">
-                        {column.items.length === 0 ? (
-                          <button
-                            onClick={() => deleteColumnMutation.mutate(id)}
-                            disabled={deleteColumnMutation.isPending}
-                            className="rounded-md p-1 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
-                            title="Delete column"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        ) : (
-                          <div className="group/tooltip relative">
-                            <button
-                              disabled
-                              className="cursor-not-allowed rounded-md p-1 text-white/15"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                            <div className="pointer-events-none absolute right-0 top-7 z-10 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] px-2.5 py-1.5 text-[11px] text-white/50 opacity-0 shadow-xl transition-opacity group-hover/tooltip:opacity-100">
-                              Move all reports out of this column before deleting
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-2 overflow-y-auto p-3">
-                    {column.items.map((item, index) => (
-                      <Draggable
-                        draggableId={item.id}
-                        index={index}
-                        key={item.id}
-                      >
-                        {(provided) => (
+          <Droppable droppableId="board" direction="horizontal" type="COLUMN">
+            {(boardProvided) => (
+              <div
+                ref={boardProvided.innerRef}
+                {...boardProvided.droppableProps}
+                className="flex gap-4 px-6 py-6"
+              >
+                {columnOrder.map((id, colIndex) => {
+                  const column = columns[id];
+                  if (!column) return null;
+                  return (
+                    <Draggable
+                      draggableId={`column-${id}`}
+                      index={colIndex}
+                      key={id}
+                    >
+                      {(colProvided, colSnapshot) => (
+                        <div
+                          ref={colProvided.innerRef}
+                          {...colProvided.draggableProps}
+                          className={`flex min-w-[320px] flex-col rounded-xl border transition-colors border-white/6 bg-[#1C1C1C]/40 ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
+                        >
+                          {/* Column header — drag handle */}
                           <div
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            ref={provided.innerRef}
-                            className="group cursor-grab rounded-lg border border-white/8 bg-[#222] p-3.5 shadow-lg transition-all hover:border-white/15 hover:shadow-xl hover:shadow-indigo-500/5"
-                            style={{ ...provided.draggableProps.style }}
-                            onClick={() => openModal(item.id)}
+                            {...colProvided.dragHandleProps}
+                            className="group/header flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-3 active:cursor-grabbing"
                           >
-                            <div className="mb-2 flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <Bug className="h-3.5 w-3.5 shrink-0 text-white/40" />
-                                <div
-                                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${getPriorityColor(item.priority)}`}
-                                />
-                              </div>
-                              <div className="flex gap-1">
-                                <span className="rounded bg-white/6 px-1.5 py-0.5 text-[10px] text-white/50">
-                                  {Capitalize(item.type)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <h4 className="mb-1.5 text-sm text-white/90 group-hover:text-white">
-                              {item.title}
-                            </h4>
-                            {item.comment && (
-                              <p className="mb-3 text-xs text-white/40 line-clamp-2">
-                                {item.comment}
+                            <div className="flex items-center gap-2">
+                              <GripVertical className="h-3.5 w-3.5 shrink-0 text-white/20 transition-colors group-hover/header:text-white/40" />
+                              <h2 className="text-sm text-white/90">
+                                {column.name}
+                              </h2>
+                              <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
+                                {column.items.length}
                               </p>
-                            )}
-
-                            {item.pagePath && (
-                              <div className="mb-3 flex items-center gap-1.5">
-                                <FileText className="h-3 w-3 text-white/30" />
-                                <span className="text-xs text-white/50">
-                                  {item.pagePath === '/'
-                                    ? 'Home Page'
-                                    : Capitalize(
-                                        item.pagePath.replace(/\//g, ''),
-                                      ) + ' Page'}
-                                </span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 text-xs text-white/40">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatTimeAgo(item.timestamp)}</span>
-                              </div>
-                              <div
-                                className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-[10px] ring-2 ring-[#222] transition-transform group-hover:scale-110"
-                                title={item.userName}
-                              >
-                                {getInitials(item.userName)}
-                              </div>
                             </div>
+                            {!BASE_COLUMN_IDS.has(id) && (
+                              <div className="relative opacity-0 transition-opacity group-hover/header:opacity-100">
+                                {column.items.length === 0 ? (
+                                  <button
+                                    onClick={() =>
+                                      deleteColumnMutation.mutate(id)
+                                    }
+                                    disabled={deleteColumnMutation.isPending}
+                                    className="rounded-md p-1 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
+                                    title="Delete column"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                ) : (
+                                  <div className="group/tooltip relative">
+                                    <button
+                                      disabled
+                                      className="cursor-not-allowed rounded-md p-1 text-white/15"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <div className="pointer-events-none absolute right-0 top-7 z-10 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] px-2.5 py-1.5 text-[11px] text-white/50 opacity-0 shadow-xl transition-opacity group-hover/tooltip:opacity-100">
+                                      Move all reports out of this column
+                                      before deleting
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  </div>
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          ))}
+
+                          {/* Cards */}
+                          <Droppable droppableId={id} type="CARD">
+                            {(provided) => (
+                              <div
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
+                                className="flex-1 space-y-2 overflow-y-auto p-3"
+                              >
+                                {column.items.map((item, index) => (
+                                  <Draggable
+                                    draggableId={item.id}
+                                    index={index}
+                                    key={item.id}
+                                  >
+                                    {(provided) => (
+                                      <div
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        ref={provided.innerRef}
+                                        className="group cursor-grab rounded-lg border border-white/8 bg-[#222] p-3.5 shadow-lg transition-all hover:border-white/15 hover:shadow-xl hover:shadow-indigo-500/5"
+                                        style={{
+                                          ...provided.draggableProps.style,
+                                        }}
+                                        onClick={() => openModal(item.id)}
+                                      >
+                                        <div className="mb-2 flex items-start justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <Bug className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                                            <div
+                                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${getPriorityColor(item.priority)}`}
+                                            />
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <span className="rounded bg-white/6 px-1.5 py-0.5 text-[10px] text-white/50">
+                                              {Capitalize(item.type)}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <h4 className="mb-1.5 text-sm text-white/90 group-hover:text-white">
+                                          {item.title}
+                                        </h4>
+                                        {item.comment && (
+                                          <p className="mb-3 text-xs text-white/40 line-clamp-2">
+                                            {item.comment}
+                                          </p>
+                                        )}
+
+                                        {item.pagePath && (
+                                          <div className="mb-3 flex items-center gap-1.5">
+                                            <FileText className="h-3 w-3 text-white/30" />
+                                            <span className="text-xs text-white/50">
+                                              {item.pagePath === '/'
+                                                ? 'Home Page'
+                                                : Capitalize(
+                                                    item.pagePath.replace(
+                                                      /\//g,
+                                                      '',
+                                                    ),
+                                                  ) + ' Page'}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-1.5 text-xs text-white/40">
+                                            <Clock className="h-3 w-3" />
+                                            <span>
+                                              {formatTimeAgo(item.timestamp)}
+                                            </span>
+                                          </div>
+                                          <div
+                                            className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-[10px] ring-2 ring-[#222] transition-transform group-hover:scale-110"
+                                            title={item.userName}
+                                          >
+                                            {getInitials(item.userName)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                {boardProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
         </DragDropContext>
 
-        {isAddingColumn ? (
-          <div className="flex min-w-[280px] flex-col rounded-xl border border-white/10 bg-[#1C1C1C]/60 p-3">
-            <input
-              ref={newColumnInputRef}
-              autoFocus
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateColumn();
-                if (e.key === 'Escape') {
-                  setIsAddingColumn(false);
-                  setNewColumnName('');
-                }
-              }}
-              placeholder="Column name..."
-              className="mb-2.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
-            />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCreateColumn}
-                disabled={!newColumnName.trim() || createColumnMutation.isPending}
-                className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-3 py-1.5 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/30 disabled:opacity-40"
-              >
-                <Check className="h-3 w-3" />
-                {createColumnMutation.isPending ? 'Adding...' : 'Add column'}
-              </button>
-              <button
-                onClick={() => {
-                  setIsAddingColumn(false);
-                  setNewColumnName('');
+        {/* Add column */}
+        <div className="flex shrink-0 items-start py-6 pr-6">
+          {isAddingColumn ? (
+            <div className="flex min-w-[280px] flex-col rounded-xl border border-white/10 bg-[#1C1C1C]/60 p-3">
+              <input
+                ref={newColumnInputRef}
+                autoFocus
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateColumn();
+                  if (e.key === 'Escape') {
+                    setIsAddingColumn(false);
+                    setNewColumnName('');
+                  }
                 }}
-                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white/60"
-              >
-                <X className="h-3 w-3" />
-              </button>
+                placeholder="Column name..."
+                className="mb-2.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCreateColumn}
+                  disabled={
+                    !newColumnName.trim() || createColumnMutation.isPending
+                  }
+                  className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-3 py-1.5 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/30 disabled:opacity-40"
+                >
+                  <Check className="h-3 w-3" />
+                  {createColumnMutation.isPending ? 'Adding...' : 'Add column'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddingColumn(false);
+                    setNewColumnName('');
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white/60"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsAddingColumn(true)}
-            className="flex min-w-[52px] flex-col items-center justify-center gap-1.5 self-start rounded-xl border border-dashed border-white/8 bg-transparent px-4 py-3 text-white/30 transition-all hover:border-white/15 hover:bg-white/[0.03] hover:text-white/50"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-xs">Add</span>
-          </button>
-        )}
+          ) : (
+            <button
+              onClick={() => setIsAddingColumn(true)}
+              className="flex min-w-[52px] flex-col items-center justify-center gap-1.5 self-start rounded-xl border border-dashed border-white/8 bg-transparent px-4 py-3 text-white/30 transition-all hover:border-white/15 hover:bg-white/[0.03] hover:text-white/50"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-xs">Add</span>
+            </button>
+          )}
+        </div>
 
         {selectedId && (
           <ReportModal
