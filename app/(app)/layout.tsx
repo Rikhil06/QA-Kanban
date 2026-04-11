@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import AuthGate from "@/components/AuthGate";
 import { SidebarProvider } from "@/context/SidebarContext";
 import MobileBackdrop from "@/components/MobileBackdrop";
+import { ToastContainer } from 'react-toastify';
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <main className="relative overflow-y-auto h-full">
                 {children}
               </main>
+              <ToastContainer position="bottom-right" pauseOnFocusLoss draggable pauseOnHover />
             </div>
           </div>
         </SidebarProvider>

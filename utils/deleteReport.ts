@@ -1,6 +1,6 @@
 import { toast } from 'react-toastify';
 
-export async function deleteReport(reportId: string): Promise<void> {
+export async function deleteReport(reportId: string, reportName: string): Promise<void> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${reportId}`,
@@ -14,9 +14,9 @@ export async function deleteReport(reportId: string): Promise<void> {
       throw new Error(errorData.error || 'Failed to delete report');
     }
 
-    toast.success(`Report ${reportId} deleted successfully!`);
+    toast.success(`Report ${reportName} deleted successfully!`);
   } catch (error) {
-    toast.error(`Error deleting report: ${reportId}`);
+    toast.error(`Error deleting report: ${reportName}`);
     throw error;
   }
 }

@@ -13,10 +13,9 @@ type Notification = {
   message: string;
   read: boolean;
   createdAt: string;
-  report: {
+  report?: {
     title: string;
   };
-  // any other fields you expect from the API
 };
 
 export function Notifications() {
@@ -91,7 +90,7 @@ export function Notifications() {
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar pr-2.5">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar">
             {notifications.notifications.map((notification: Notification) => {
               const Icon = iconMap[notification.type];
               const iconBg = iconBgMap[notification.type];
@@ -122,7 +121,7 @@ export function Notifications() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mb-1">
-                        {notification.report.title}
+                        {notification.report?.title}
                       </p>
                       <p className="text-xs text-gray-600">
                         {timeAgo(notification.createdAt)}

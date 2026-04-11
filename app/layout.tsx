@@ -4,7 +4,7 @@ import "./globals.css";
 import { ReactQueryProvider } from "./providers/ReactQueryProvider";
 
 export const metadata: Metadata = {
-  title: "QA Board",
+  title: "Annoture",
   description: "A collaborative QA tool that makes website feedback and bug reporting fast and visual. Users can click anywhere on a site, add comments, and capture annotated screenshots directly in the browser. All feedback is automatically organized into a lightweight Kanban board, where teams can track, prioritize, and resolve issues efficiently. With support for user authentication, shared site access, and activity tracking, it’s built for teams that want a streamlined, real-time QA process without messy spreadsheets or endless email chains.",
 };
 

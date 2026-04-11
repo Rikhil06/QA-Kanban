@@ -44,7 +44,7 @@ export function FilterBar({ filters, setFilters, onClearFilters, users, pages }:
     filters.pages.length > 0;
 
   return (
-    <div className="sticky top-0 z-40 border-b border-white/8 bg-[#0F0F0F]/80 backdrop-blur-xl">
+    <div className="sticky top-0 z-40 bg-[#0F0F0F]/80 backdrop-blur-xl">
       <div className="flex items-center gap-2 px-6 py-2.5">
         {/* Filter dropdowns */}
         <FilterDropdown

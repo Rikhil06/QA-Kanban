@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 export function SocialLoginButtons() {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleSocialLogin = (provider: string) => {
+  const handleSocialLogin = (provider: 'google' | 'github') => {
     setLoadingProvider(provider);
-    // Simulate OAuth flow
-    setTimeout(() => {
-      setLoadingProvider(null);
-    }, 1500);
+    // Redirect to backend OAuth endpoint — the backend handles the provider
+    // handshake and redirects back to /auth/callback?token=... on success.
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/${provider}`;
   };
 
   return (

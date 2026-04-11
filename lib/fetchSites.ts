@@ -19,6 +19,6 @@ export async function fetchSites(token: string | undefined) {
     return data;
   } catch (err) {
     console.error(err);
-    return [];
+    throw err;
   }
 }

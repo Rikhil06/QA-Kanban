@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PATH=/Users/rikhil/.nvm/versions/node/v22.9.0/bin:$PATH /Users/rikhil/.nvm/versions/node/v22.9.0/bin/node -e \"const p=require\\(''''./package.json''''\\); console.log\\(p.packageManager\\)\")"
+    ]
+  }
+}

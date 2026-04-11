@@ -19,6 +19,8 @@ import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
 import { Bug, Check, ChevronLeft, Clock, FileText, GripVertical, Plus, Trash2, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
+import { toast } from 'react-toastify';
+import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
 
 type CustomColumn = {
   id: string;
@@ -54,17 +56,37 @@ export default function SiteReportsPage() {
   // -------------------- Column order --------------------
   const [columnOrder, setColumnOrder] = useState<string[]>(['new', 'inProgress', 'done']);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+  // Controls which content (collapsed vs expanded) is rendered — lags behind
+  // collapsedColumns on expand so the width animation plays before content swaps.
+  const [displayCollapsedColumns, setDisplayCollapsedColumns] = useState<Set<string>>(new Set());
 
   const toggleCollapse = (id: string) => {
-    setCollapsedColumns((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    const isCurrentlyCollapsed = collapsedColumns.has(id);
+    if (isCurrentlyCollapsed) {
+      // Expanding: animate width immediately, swap content after transition
+      setCollapsedColumns((prev) => { const next = new Set(prev); next.delete(id); return next; });
+      setTimeout(() => {
+        setDisplayCollapsedColumns((prev) => { const next = new Set(prev); next.delete(id); return next; });
+      }, 200);
+    } else {
+      // Collapsing: swap content and width at the same time
+      setCollapsedColumns((prev) => new Set([...prev, id]));
+      setDisplayCollapsedColumns((prev) => new Set([...prev, id]));
+    }
   };
   const orderInitialized = useRef(false);
+  const [isLive, setIsLive] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // -------------------- Real-time sync --------------------
+  useRealtimeBoard({
+    slug,
+    teamId: user?.teamId,
+    token: token ?? undefined,
+    onConnected: () => setIsLive(true),
+    onDisconnected: () => setIsLive(false),
+  });
 
   // -------------------- Fetch Users --------------------
   const { data: users = [] } = useQuery<User[]>({
@@ -237,6 +259,9 @@ export default function SiteReportsPage() {
         persistOrderMutation.mutate(next);
         return next;
       });
+    },
+    onError: () => {
+      toast.error('Failed to delete column');
     },
   });
 
@@ -426,16 +451,27 @@ export default function SiteReportsPage() {
 
   return (
     <>
-      <FilterBar
-        filters={filters}
-        setFilters={setFilters}
-        onClearFilters={() =>
-          setFilters({ status: [], priority: [], assignee: [], pages: [] })
-        }
-        users={users}
-        pages={uniquePages}
-      />
-      <div className="flex h-[calc(100vh-7.5rem)] overflow-x-auto">
+      <div className="flex items-center justify-between border-b border-white/8">
+        <FilterBar
+          filters={filters}
+          setFilters={setFilters}
+          onClearFilters={() =>
+            setFilters({ status: [], priority: [], assignee: [], pages: [] })
+          }
+          users={users}
+          pages={uniquePages}
+        />
+        {/* Live indicator — shown when WebSocket is connected */}
+        <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 mr-6 rounded-full border transition-all ${
+          isLive
+            ? 'bg-green-500/10 border-green-500/20 text-green-400'
+            : 'bg-white/5 border-white/10 text-white/30'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-green-400 animate-pulse' : 'bg-white/20'}`} />
+          {isLive ? 'Live' : 'Connecting...'}
+        </div>
+      </div>
+      <div className="flex h-[calc(100vh-8.5rem)] overflow-x-auto">
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="board" direction="horizontal" type="COLUMN">
             {(boardProvided) => (
@@ -455,13 +491,14 @@ export default function SiteReportsPage() {
                     >
                       {(colProvided, colSnapshot) => {
                         const isCollapsed = collapsedColumns.has(id);
+                        const showCollapsed = displayCollapsedColumns.has(id);
                         return (
                           <div
                             ref={colProvided.innerRef}
                             {...colProvided.draggableProps}
-                            className={`flex flex-col rounded-xl border transition-all duration-200 border-white/6 bg-[#1C1C1C]/40 ${isCollapsed ? 'w-14 min-w-[3.5rem]' : 'min-w-[320px]'} ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
+                            className={`flex flex-col overflow-hidden rounded-xl border transition-all duration-200 border-white/6 bg-[#1C1C1C]/40 ${isCollapsed ? 'w-14 min-w-[3.5rem]' : 'min-w-[320px]'} ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
                           >
-                            {isCollapsed ? (
+                            {showCollapsed ? (
                               /* ---- Collapsed view ---- */
                               <div
                                 {...colProvided.dragHandleProps}
@@ -474,15 +511,15 @@ export default function SiteReportsPage() {
                                 >
                                   <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
                                 </button>
-                                <div className="flex flex-1 flex-col items-center justify-center gap-3">
-                                  <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
-                                    {column.items.length}
-                                  </p>
+                                <div className="flex flex-1 flex-col items-center gap-3">
                                   <span
                                     className="whitespace-nowrap text-xs text-white/50 [writing-mode:vertical-rl] rotate-180"
                                   >
                                     {column.name}
                                   </span>
+                                  <p className="flex h-5 w-5 items-center justify-center rounded-full bg-white/8 text-xs text-white/60">
+                                    {column.items.length}
+                                  </p>
                                 </div>
                                 {/* Hidden droppable so cards can still be dropped into collapsed columns */}
                                 <Droppable droppableId={id} type="CARD">

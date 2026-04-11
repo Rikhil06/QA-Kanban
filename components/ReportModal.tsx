@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import {
   X,
   Bug,
@@ -36,17 +36,13 @@ import {
   timeAgo,
 } from '@/utils/helpers';
 import { toast } from 'react-toastify';
-import Zoom from 'react-medium-image-zoom';
+import Image from 'next/image';
 import CommentItem from './comment/CommentItem';
 import { useUser } from '@/context/UserContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
 import { CalendarCN } from './ui/calendar';
 import { deleteReport } from '@/utils/deleteReport';
-
-// const statusOptions: Issue['status'][] = ['backlog', 'in-progress', 'review', 'done'];
-// const priorityOptions: Issue['priority'][] = ['low', 'medium', 'high', 'urgent'];
-// const typeOptions: Issue['type'][] = ['bug', 'feature', 'task'];
 
 export default function ReportModal({
   id,
@@ -75,6 +71,7 @@ export default function ReportModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [isImageOpen, setIsImageOpen] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -230,21 +227,19 @@ export default function ReportModal({
         },
       );
 
-      if (!res.ok) throw new Error('Failed to update status');
+      if (!res.ok) throw new Error('Failed to update due date');
 
-      const updated = await res.json();
-      toast.success(`Moved to ${Capitalize(updated.priority)}!`);
+      await res.json();
+      toast.success('Due date updated!');
 
-      if (res.ok) {
-        setDate(date);
-        setOpen(false);
-        setReport((prev) =>
-          prev ? { ...prev, dueDate: date?.toISOString().split('T')[0] } : prev,
-        );
-      }
+      setDate(date);
+      setOpen(false);
+      setReport((prev) =>
+        prev ? { ...prev, dueDate: date?.toISOString().split('T')[0] } : prev,
+      );
     } catch (error) {
       console.error(error);
-      toast.error('Failed to update status');
+      toast.error('Failed to update due date');
     }
   };
 
@@ -307,18 +302,6 @@ export default function ReportModal({
       toast.error('Error saving comment');
     }
   };
-
-  // const Icon = typeIcons[issue.type];
-
-  // const handleUpdateField = <K extends keyof Issue>(field: K, value: Issue[K]) => {
-  //   onUpdateIssue({ ...issue, [field]: value });
-  //   setOpenDropdown(null);
-  // };
-
-  // const handleSaveDescription = () => {
-  //   onUpdateIssue({ ...issue, description: editedDescription });
-  //   setIsEditingDescription(false);
-  // };
 
   const handleCancelDescription = () => {
     setEditedDescription('');
@@ -456,7 +439,7 @@ export default function ReportModal({
                   <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/8 bg-[#1C1C1C] p-1 shadow-2xl">
                     <button
                       onClick={() => {
-                        deleteReport(report.id);
+                        deleteReport(report.id, report.title);
                         onClose();
                       }}
                       className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 cursor-pointer"
@@ -482,19 +465,45 @@ export default function ReportModal({
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
           {/* Screenshot */}
           <div className="border-b border-white/8 p-6">
-            <div className="overflow-hidden rounded-lg border border-white/8 bg-[#222]">
-              <div className="relative h-64">
-                <Zoom zoomMargin={45}>
+            <div
+              className="overflow-hidden rounded-lg border border-white/8 bg-[#222] relative h-64 cursor-zoom-in"
+              onClick={() => setIsImageOpen(true)}
+            >
+              <Image
+                src={report.imagePath}
+                alt="Screenshot"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+
+            {isImageOpen && createPortal(
+              <div
+                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                onClick={() => setIsImageOpen(false)}
+              >
+                <button
+                  className="absolute top-4 right-4 text-white/70 hover:text-white"
+                  onClick={() => setIsImageOpen(false)}
+                >
+                  <X size={28} />
+                </button>
+                <div
+                  className="relative max-w-[90vw] max-h-[90vh] w-full h-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Image
                     src={report.imagePath}
                     alt="Screenshot"
                     fill
-                    className="object-cover rounded-2xl"
+                    className="object-contain"
                     unoptimized
                   />
-                </Zoom>
-              </div>
-            </div>
+                </div>
+              </div>,
+              document.body
+            )}
           </div>
 
           {/* Metadata grid */}

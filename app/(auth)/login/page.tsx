@@ -51,11 +51,11 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
-        {/* {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-          <p className="text-red-200 text-sm">{error}</p>
-        </div>
-      )} */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         <div>
           <label htmlFor="email" className="block text-white/60 text-sm mb-2">
@@ -71,9 +71,6 @@ export default function LoginPage() {
             className="w-full bg-[#0F0F0F] border border-white/8 rounded-lg px-4 py-3 text-white/90 placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
             placeholder="test@test.com"
           />
-          {/* {errors.email && (
-          <p className="mt-2 text-red-400/80 text-sm">{errors.email.message}</p>
-        )} */}
         </div>
 
         <div>
@@ -81,12 +78,12 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-white/60 text-sm">
               Password
             </label>
-            <a
-              href="#"
+            <Link
+              href="/forgot-password"
               className="text-white/40 hover:text-white/70 text-sm transition-colors"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
           <input
             id="password"
@@ -99,7 +96,6 @@ export default function LoginPage() {
             className="w-full bg-[#0F0F0F] border border-white/8 rounded-lg px-4 py-3 text-white/90 placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
             placeholder="Enter your password"
           />
-          {error && <p className="mt-2 text-red-400/80 text-sm">{error}</p>}
         </div>
 
         <button

@@ -39,7 +39,7 @@ const statusConfig = {
 export function UsersTasks() {
   const token = getToken();
 
-  const { data: tasks, isLoading } = useSWR(
+  const { data: tasks, isLoading, error } = useSWR(
     token
       ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks`, token]
       : null,
@@ -61,7 +61,7 @@ export function UsersTasks() {
     const v = value.toLowerCase();
 
     if (v === 'new') return 'New';
-    if (v === 'inprogress' || v === 'in progress' || 'inProgress')
+    if (v === 'inprogress' || v === 'in progress' || v === 'inprogress')
       return 'In Progress';
     if (v === 'qa') return 'QA';
     if (v === 'done') return 'Done';
@@ -70,6 +70,11 @@ export function UsersTasks() {
   }
 
   if (isLoading) return <p className="text-white">Loading...</p>;
+  if (error || !tasks) return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl items-center justify-center">
+      <p className="text-sm text-gray-400">Failed to load tasks. Please refresh.</p>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
@@ -99,7 +104,7 @@ export function UsersTasks() {
           </p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar pr-2.5">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar">
           {tasks.map((task: Task) => {
             const priorityStyle =
               priorityConfig[normalizePriority(task.priority)];
@@ -141,10 +146,15 @@ export function UsersTasks() {
 
                       <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="w-3 h-3" />
-                        {new Date(task.dueDate).toLocaleDateString('en-GB', {
+
+                        { task.dueDate !== "Today" ?
+                        new Date(task.dueDate).toLocaleDateString('en-GB', {
                           day: 'numeric',
                           month: 'short',
-                        })}
+                        })
+
+                        : task.dueDate
+                      }
                       </span>
 
                       <span className="text-xs text-gray-600">

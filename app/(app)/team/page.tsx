@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { InviteByEmail } from '@/components/team/InviteByEmail';
 import { InviteCode } from '@/components/team/InviteCode';
 import { TeamMembersList } from '@/components/team/TeamMembersList';
-import { ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { Users } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { getToken } from '@/lib/auth';
@@ -41,35 +41,27 @@ export default function Page() {
       .catch((err) => console.error('Failed to fetch reports this week', err));
   }, []);
 
-  console.log(members);
-
   useEffect(() => {
     async function loadCode() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
 
-      const data = await res.json();
-      setInviteCode(data.code);
+        if (!res.ok) throw new Error('Failed to load invite code');
+
+        const data = await res.json();
+        setInviteCode(data.code);
+      } catch (err) {
+        console.error('Failed to load invite code', err);
+      }
     }
 
     loadCode();
   }, []);
-
-  // const handleInviteByEmail = (email: string, role: 'Admin' | 'Member') => {
-  //   const newMember: TeamMember = {
-  //     id: Date.now().toString(),
-  //     name: email.split('@')[0],
-  //     email,
-  //     role,
-  //     status: 'Pending',
-  //   };
-  //   setMembers([...members, newMember]);
-
-  // };
 
   const handleGenerateNewCode = async () => {
     setIsSubmitting(true);
@@ -101,7 +93,7 @@ export default function Page() {
         setInviteCode(data.code);
       } else {
         setIsSubmitting(false);
-        alert(data.error || 'Failed to get invite code');
+        toast.error(data.error || 'Failed to get invite code');
       }
     } catch (err) {
       console.error(err);
@@ -128,13 +120,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen text-white">
-      <ToastContainer
-        position="bottom-right"
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex items-center gap-2 text-white/40 mb-3">

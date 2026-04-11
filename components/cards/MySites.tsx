@@ -20,9 +20,14 @@ export function MySites() {
 
   useEffect(() => {
     const getSites = async () => {
-      const data = await fetchSites(token);
-      setSites(data);
-      setLoading(false);
+      try {
+        const data = await fetchSites(token);
+        setSites(data);
+      } catch {
+        setHasError(true);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getSites();
@@ -39,8 +44,15 @@ export function MySites() {
         </Link>
       </div>
       
-      <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2.5">
-        {sites.map((site) => (
+      {hasError && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <AlertCircle className="w-8 h-8 text-red-400 mb-3" />
+          <p className="text-sm text-gray-400">Failed to load sites. Please refresh.</p>
+        </div>
+      )}
+
+      <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+        {!hasError && sites.map((site) => (
           <Link
             key={site.id}
             className="group bg-white/3 border border-white/5 rounded-lg p-4 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"

@@ -5,7 +5,6 @@ import { Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-// import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 
 export default function RegisterPage() {
@@ -16,6 +15,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const router = useRouter();
   const { refreshUser } = useUser();
@@ -30,6 +30,7 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterError(null);
     try {
       setIsLoading(true);
       const res = await fetch(
@@ -43,25 +44,23 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      if (res.ok) {
-        setToken(data.token);
-        await refreshUser();
-        router.push('/');
-        setIsLoading(false);
-      } else {
-        alert(data.error || 'Login failed');
-        setIsLoading(false);
+      if (!res.ok) {
+        setRegisterError(data.error || 'Registration failed');
+        return;
       }
+
+      setToken(data.token);
+      await refreshUser();
 
       if (inviteCode) {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${data.token}`,
           },
           body: JSON.stringify({ code: inviteCode }),
         });
-
         localStorage.removeItem('invite_code');
         router.push('/');
       } else {
@@ -69,6 +68,7 @@ export default function RegisterPage() {
       }
     } catch (err) {
       console.error(err);
+      setRegisterError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -85,11 +85,11 @@ export default function RegisterPage() {
         </p>
       </div>
       <form onSubmit={handleRegister} className="space-y-4">
-        {/* {errors.general && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
-          {errors.general}
-        </div>
-      )} */}
+        {registerError && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+            {registerError}
+          </div>
+        )}
 
         <div>
           <label htmlFor="name" className="block text-white/80 text-sm mb-2">
@@ -106,9 +106,6 @@ export default function RegisterPage() {
             required
             className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all`}
           />
-          {/* {errors.email && (
-          <p className="text-red-400 text-xs mt-1">{errors.email}</p>
-        )} */}
         </div>
 
         {/* Email Input */}
@@ -127,9 +124,6 @@ export default function RegisterPage() {
             required
             className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all`}
           />
-          {/* {errors.email && (
-          <p className="text-red-400 text-xs mt-1">{errors.email}</p>
-        )} */}
         </div>
 
         {/* Password Input */}
@@ -160,9 +154,6 @@ export default function RegisterPage() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {/* {errors.password && (
-            <p className="text-red-400 text-xs mt-1">{errors.password}</p>
-          )} */}
         </div>
 
         {/* Confirm Password Input */}
@@ -191,9 +182,6 @@ export default function RegisterPage() {
               {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {/* {errors.confirmPassword && (
-          <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>
-        )} */}
         </div>
 
         {/* Submit Button */}
