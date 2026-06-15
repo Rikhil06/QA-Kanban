@@ -4,7 +4,7 @@ import { getToken, setToken } from '@/lib/auth';
 import { Check, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useUser } from '@/context/UserContext';
 
 const PASSWORD_RULES = [
@@ -20,6 +20,14 @@ function isValidEmail(email: string) {
 }
 
 export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
+  );
+}
+
+function RegisterContent() {
   const [email, setEmail]                       = useState('');
   const [emailError, setEmailError]             = useState('');
   const [password, setPassword]                 = useState('');

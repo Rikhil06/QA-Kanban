@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   DragDropContext,
@@ -34,6 +34,14 @@ type CustomColumn = {
 const BASE_COLUMN_IDS = new Set(['new', 'inProgress', 'done']);
 
 export default function SiteReportsPage() {
+  return (
+    <Suspense>
+      <SiteReportsContent />
+    </Suspense>
+  );
+}
+
+function SiteReportsContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();

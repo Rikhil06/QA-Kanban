@@ -3,7 +3,7 @@
 import { getToken } from '@/lib/auth';
 import { Capitalize } from '@/utils/helpers';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
 type Team = {
   id: string;
@@ -13,6 +13,14 @@ type Team = {
 };
 
 export default function BillingSuccess() {
+  return (
+    <Suspense>
+      <BillingSuccessContent />
+    </Suspense>
+  );
+}
+
+function BillingSuccessContent() {
   const params = useSearchParams();
   const teamId = params.get('team');
   const token = getToken();
