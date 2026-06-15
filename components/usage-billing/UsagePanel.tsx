@@ -3,124 +3,105 @@ import { getToken } from '@/lib/auth';
 import { fetcher } from '@/lib/fetcher';
 import { Capitalize } from '@/utils/helpers';
 import { AlertCircle, Loader, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import useSWR from 'swr';
 
-interface UsagePanelProps {
-  currentPlan: 'free' | 'starter' | 'team' | 'agency';
+// Mirrors PLAN_LIMITS in server.js — null means unlimited
+const PLAN_LIMITS: Record<string, { reports: number | null; members: number | null; sites: number | null }> = {
+  free:    { reports: 25,  members: 5,   sites: 3 },
+  starter: { reports: 300, members: 10,  sites: 5 },
+  team:    { reports: null, members: null, sites: null },
+  agency:  { reports: null, members: null, sites: null },
+};
+
+function pct(used: number | undefined, limit: number | null): number {
+  if (!used || !limit) return 0;
+  return Math.min(Math.round((used / limit) * 100), 100);
 }
 
-export function UsagePanel({ currentPlan }: UsagePanelProps) {
+function fmtLimit(limit: number | null) {
+  return limit === null ? '∞' : limit;
+}
+
+function nextPlan(plan: string): string {
+  const order = ['free', 'starter', 'team', 'agency'];
+  const next = order[order.indexOf(plan) + 1];
+  return next ? Capitalize(next) : '';
+}
+
+export function UsagePanel() {
   const token = getToken();
   const { user } = useUser();
-  const { data, isLoading, error } = useSWR(
-    token && user?.teamId && user?.team?.subscription?.stripeSubscriptionId
-      ? [
-          'team-stats-and-billing',
-          user.teamId,
-          user.team.subscription.stripeSubscriptionId,
-          token,
-        ]
-      : null,
-    async ([, teamId, subId, token]) => {
-      const [stats, billingDate] = await Promise.all([
-        fetcher(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/team/${teamId}/stats`,
-          token,
-        ),
-        fetcher(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/next-renewal/${subId}`,
-          token,
-        ),
-      ]);
+  const plan = (user?.team?.plan ?? 'free').toLowerCase();
+  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 
-      return { stats, billingDate };
-    },
+  // Always fetch team stats — works for free users without a subscription
+  const { data: stats, isLoading: statsLoading } = useSWR(
+    token && user?.teamId ? ['team-stats', user.teamId, token] : null,
+    ([, teamId, tok]) => fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/team/${teamId}/stats`, tok),
   );
-  if (isLoading)
+
+  // Only fetch billing date when a paid subscription exists
+  const { data: billingData } = useSWR(
+    token && user?.team?.subscription?.stripeSubscriptionId
+      ? ['billing-date', user.team.subscription.stripeSubscriptionId, token]
+      : null,
+    ([, subId, tok]) =>
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/next-renewal/${subId}`, tok),
+  );
+
+  if (statsLoading) {
     return (
-      <div className={`flex items-center justify-center`}>
-        <Loader size={48} className={`animate-spin text-blue-500`} />
+      <div className="rounded-xl border border-white/8 bg-[#1A1A1A] p-6 flex items-center justify-center min-h-[200px]">
+        <Loader size={32} className="animate-spin text-blue-500" />
       </div>
     );
-  const usageData = {
-    screenshots: {
-      used: data?.stats.screenshotsCount,
-      limit:
-        user?.team.plan === 'team'
-          ? 1000
-          : user?.team.plan === 'starter'
-            ? 300
-            : 25,
-    },
-    projects: {
-      used: data?.stats.projectsCount,
-      limit:
-        user?.team.plan === 'team'
-          ? 1000
-          : user?.team.plan === 'starter'
-            ? 5
-            : 3,
-    },
-    teamMembers: {
-      used: data?.stats.teamMembersCount,
-      limit:
-        user?.team.plan === 'team'
-          ? 1000
-          : user?.team.plan === 'starter'
-            ? 10
-            : 5,
-    },
-  };
+  }
 
-  const screenshotPercentage =
-    (usageData.screenshots.used / usageData.screenshots.limit) * 100;
-  const projectsPercentage =
-    (usageData.projects.used / usageData.projects.limit) * 100;
-  const membersPercentage =
-    (usageData.teamMembers.used / usageData.teamMembers.limit) * 100;
+  const screenshotPct = pct(stats?.screenshotsCount, limits.reports);
+  const projectsPct   = pct(stats?.projectsCount,    limits.sites);
+  const membersPct    = pct(stats?.teamMembersCount,  limits.members);
 
-  const isNearingScreenshotLimit = screenshotPercentage > 70;
-  const isNearingProjectsLimit = projectsPercentage > 30;
-  const isNearingMembersLimit = membersPercentage > 50;
+  const isNearingScreenshots = limits.reports !== null && screenshotPct > 70;
+  const isNearingProjects    = limits.sites    !== null && projectsPct   > 70;
+  const isNearingMembers     = limits.members  !== null && membersPct    > 70;
+
+  const upgradeHint = nextPlan(plan) ? (
+    <Link href="/usage-billing" className="text-purple-400 hover:text-purple-300 transition-colors">
+      Upgrade to {nextPlan(plan)}
+    </Link>
+  ) : null;
 
   return (
     <div className="rounded-xl border border-white/8 bg-[#1A1A1A] p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-white">Current Plan & Usage</h3>
         <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs">
-          {Capitalize(user?.team.plan)}
+          {Capitalize(plan)}
         </div>
       </div>
 
-      {/* Screenshot Usage */}
+      {/* Screenshots */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-white/70">Screenshots this month</span>
           <span className="text-sm text-white">
-            {usageData.screenshots.used} / {usageData.screenshots.limit}
+            {stats?.screenshotsCount ?? 0} / {fmtLimit(limits.reports)}
           </span>
         </div>
         <div className="h-2 rounded-full bg-[#2C2C2C] overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${
-              isNearingScreenshotLimit
-                ? 'bg-linear-to-r from-orange-500 to-red-500'
-                : 'bg-linear-to-r from-blue-500 to-purple-500'
-            }`}
-            style={{ width: `${screenshotPercentage}%` }}
+            className={`h-full rounded-full transition-all ${isNearingScreenshots ? 'bg-linear-to-r from-orange-500 to-red-500' : 'bg-linear-to-r from-blue-500 to-purple-500'}`}
+            style={{ width: limits.reports === null ? '0%' : `${screenshotPct}%` }}
           />
         </div>
-        {isNearingScreenshotLimit && (
+        {isNearingScreenshots && (
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm text-orange-400">
-                You&apos;re nearing your screenshot limit
-              </p>
-              <p className="text-xs text-white/50 mt-1">
-                Upgrade to Starter for 300 screenshots/month
-              </p>
-            </div>
+            <p className="text-sm text-orange-400">
+              You&apos;re nearing your screenshot limit.{' '}
+              {upgradeHint && <>{upgradeHint} for more.</>}
+            </p>
           </div>
         )}
       </div>
@@ -130,26 +111,22 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-white/70">Projects</span>
           <span className="text-sm text-white">
-            {usageData.projects.used} / {usageData.projects.limit ?? '∞'}
+            {stats?.projectsCount ?? 0} / {fmtLimit(limits.sites)}
           </span>
         </div>
         <div className="h-2 rounded-full bg-[#2C2C2C] overflow-hidden">
           <div
             className="h-full rounded-full bg-linear-to-r from-green-500 to-emerald-500 transition-all"
-            style={{ width: `${projectsPercentage}%` }}
+            style={{ width: limits.sites === null ? '0%' : `${projectsPct}%` }}
           />
         </div>
-        {isNearingProjectsLimit && (
+        {isNearingProjects && (
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm text-orange-400">
-                You&apos;re nearing your projects limit
-              </p>
-              <p className="text-xs text-white/50 mt-1">
-                Upgrade to the Starter or Team plan for more screenshots
-              </p>
-            </div>
+            <p className="text-sm text-orange-400">
+              You&apos;re nearing your project limit.{' '}
+              {upgradeHint && <>{upgradeHint} for more.</>}
+            </p>
           </div>
         )}
       </div>
@@ -159,26 +136,22 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-white/70">Team members</span>
           <span className="text-sm text-white">
-            {usageData.teamMembers.used} / {usageData.teamMembers.limit ?? '∞'}
+            {stats?.teamMembersCount ?? 0} / {fmtLimit(limits.members)}
           </span>
         </div>
         <div className="h-2 rounded-full bg-[#2C2C2C] overflow-hidden">
           <div
             className="h-full rounded-full bg-linear-to-r from-purple-500 to-pink-500 transition-all"
-            style={{ width: `${membersPercentage}%` }}
+            style={{ width: limits.members === null ? '0%' : `${membersPct}%` }}
           />
         </div>
-        {isNearingMembersLimit && (
+        {isNearingMembers && (
           <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm text-orange-400">
-                You&apos;re nearing your team members limit
-              </p>
-              <p className="text-xs text-white/50 mt-1">
-                Upgrade to the Starter or Team plan to add more team members
-              </p>
-            </div>
+            <p className="text-sm text-orange-400">
+              You&apos;re nearing your member limit.{' '}
+              {upgradeHint && <>{upgradeHint} to add more.</>}
+            </p>
           </div>
         )}
       </div>
@@ -188,22 +161,21 @@ export function UsagePanel({ currentPlan }: UsagePanelProps) {
         <div className="flex items-center justify-between text-sm">
           <span className="text-white/50">Next renewal</span>
           <span className="text-white/80">
-            {data?.billingDate.nextBillingDateFormatted}
+            {billingData?.nextBillingDateFormatted ?? (plan === 'free' ? '—' : 'Loading…')}
           </span>
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Insights */}
       <div className="mt-6 p-4 rounded-lg bg-[#1C1C1C] border border-white/8">
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp className="w-4 h-4 text-green-400" />
           <span className="text-sm text-white/80">Usage insights</span>
         </div>
         <p className="text-xs text-white/50">
-          You&apos;ve used {screenshotPercentage}% of your screenshots this
-          month.{' '}
-          {isNearingScreenshotLimit &&
-            'Consider upgrading for unlimited access.'}
+          {limits.reports === null
+            ? 'You have unlimited screenshots on your current plan.'
+            : `You've used ${screenshotPct}% of your screenshot allowance this month.${screenshotPct > 70 ? ' Consider upgrading for unlimited access.' : ''}`}
         </p>
       </div>
     </div>

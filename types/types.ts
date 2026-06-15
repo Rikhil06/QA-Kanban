@@ -30,6 +30,11 @@ export type Report = {
     userId: string;
     userName: string;
     dueDate?: string;
+    browser?: string;
+    os?: string;
+    screenSize?: string;
+    viewport?: string;
+    cssPath?: string;
 };
 
 export type Comment = {
@@ -79,6 +84,8 @@ export type Site = {
     length: number;
     siteStatus: string;
     total: number;
+    isShared?: boolean;
+    sharedRole?: string | null;
 };
 
 export type Task = {

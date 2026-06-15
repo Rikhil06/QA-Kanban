@@ -14,7 +14,16 @@ export default function CommentItem({ comment, onReply, depth = 0 }: { comment: 
           <span className="text-sm text-white/80">{comment.user?.name}</span>
           <span className="text-xs text-white/30">{timeAgo(comment.createdAt)}</span>
         </div>
-        <p className="text-sm text-white/60">{comment.content}</p>
+        <p className="text-sm text-white/60">
+          {comment.content.split(/(@\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
+            const match = part.match(/^@\[([^\]]+)\]\([^)]+\)$/);
+            return match ? (
+              <span key={i} className="text-purple-400 font-medium">@{match[1]}</span>
+            ) : (
+              <span key={i}>{part}</span>
+            );
+          })}
+        </p>
 
         {/* Attachments */}
         {comment.attachments && comment.attachments.length > 0 && (

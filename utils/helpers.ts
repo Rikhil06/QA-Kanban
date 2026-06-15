@@ -19,7 +19,8 @@ export const formatSize = (bytes: number) =>
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 export const getPriorityColor = (priority: string) => {
-  switch (priority.toLowerCase()) {
+  switch (priority?.toLowerCase()) {
+    case 'not assigned':
     case 'not_assigned':
       return 'bg-sky-500';
     case 'low':

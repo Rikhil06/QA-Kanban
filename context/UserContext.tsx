@@ -1,12 +1,13 @@
 'use client';
 
 import { clearToken, getToken } from '@/lib/auth';
+import * as Sentry from '@sentry/nextjs';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface Subscription {
   plan: string;
   interval: string;
-  status: string;
+  status: string; // 'active' | 'canceling' | 'canceled' | 'past_due'
   trialEndsAt: string;
   currentPeriodEnd: string;
   stripePriceId: string;
@@ -16,8 +17,8 @@ interface Subscription {
 interface Team {
   id: string;
   name: string;
-  plan: string; // you could also make this a Plan enum
-  subscription?: Subscription; // use proper type if you know the subscription shape
+  plan: string;
+  subscription?: Subscription;
 }
 
 interface User {
@@ -28,6 +29,7 @@ interface User {
   team: Team;
   role: string;
   memberships?: [];
+  emailVerified: boolean;
 }
 
 interface UserContextType {
@@ -67,6 +69,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setUser(data.user);
+
+      // Tag every future Sentry event with the logged-in user
+      Sentry.setUser({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.name,
+      });
     } catch {
       setUser(null);
     } finally {
@@ -74,10 +83,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // 🔥 logout clears token + context immediately
   const logout = () => {
     clearToken();
     setUser(null);
+    // Clear Sentry user so post-logout errors aren't attributed to the old session
+    Sentry.setUser(null);
   };
 
   useEffect(() => {

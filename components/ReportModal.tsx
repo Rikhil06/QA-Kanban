@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { io } from 'socket.io-client';
+import type { BoardEvent } from '@/hooks/useRealtimeBoard';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -17,11 +19,16 @@ import {
   Calendar,
   MoreVertical,
   Trash2,
+  Globe,
+  Monitor,
+  Maximize2,
+  Scan,
+  Layout,
 } from 'lucide-react';
 import {
   ReportModalProps,
   Report,
-  Site,
+  User,
   ColumnId,
   Priority,
   Comment,
@@ -38,6 +45,7 @@ import {
 import { toast } from 'react-toastify';
 import Image from 'next/image';
 import CommentItem from './comment/CommentItem';
+import MentionTextarea, { parseMentions, toDisplayText } from './comment/MentionTextarea';
 import { useUser } from '@/context/UserContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
@@ -57,7 +65,7 @@ export default function ReportModal({
   const [report, setReport] = useState<Report | null>(null);
   const [status, setStatus] = useState<string>('');
   const [priority, setPriority] = useState<string>('');
-  const [users, setUsers] = useState<Site[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [comments, setComments] = useState<Comment[]>();
   const [newComment, setNewComment] = useState('');
@@ -74,56 +82,39 @@ export default function ReportModal({
   const [isImageOpen, setIsImageOpen] = useState(false);
 
   useEffect(() => {
+    // Read the token inside the effect so it's always evaluated client-side,
+    // never captured from an SSR render where js-cookie returns undefined.
+    const t = getToken();
+    const headers = { Authorization: `Bearer ${t}` };
+
     const fetchReport = async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { headers },
       );
       if (!res.ok) return;
       const data = await res.json();
       setReport(data);
+      // Seed status + priority from the single report fetch — no extra round-trips needed.
+      if (data.status) setStatus(data.status);
+      if (data.priority) setPriority(data.priority);
     };
-
-    fetchReport();
 
     const fetchComments = async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${id}/comments`,
+        { headers },
       );
       if (!res.ok) return;
       const data = await res.json();
       setComments(data);
     };
+
+    fetchReport();
     fetchComments();
 
-    const fetchStatus = async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      setStatus(data.status);
-    };
-    fetchStatus();
 
-    const fetchPriority = async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/priority`,
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      setPriority(data.priority);
-    };
-    fetchPriority();
+
   }, [id]);
 
   useEffect(() => {
@@ -133,8 +124,10 @@ export default function ReportModal({
 
     const fetchUsers = async () => {
       try {
+        const t = getToken();
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/users`,
+          { headers: { Authorization: `Bearer ${t}` } },
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -146,6 +139,30 @@ export default function ReportModal({
 
     fetchUsers();
   }, [pathname]);
+
+  // Re-fetch report data when another user changes this ticket's priority or status
+  useEffect(() => {
+    const t = getToken();
+    if (!t || !id) return;
+
+    const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL!, {
+      auth: { token: t },
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('board:event', (event: BoardEvent) => {
+      if (!('reportId' in event) || event.reportId !== id) return;
+
+      if (event.type === 'report:updated' && event.priority) {
+        setPriority(event.priority);
+      }
+      if (event.type === 'report:status' && event.status) {
+        setStatus(event.status);
+      }
+    });
+
+    return () => { socket.disconnect(); };
+  }, [id]);
 
   const handleMoveTo = async (newStatus: ColumnId, shouldClose = false) => {
     try {
@@ -213,6 +230,31 @@ export default function ReportModal({
     }
   };
 
+  const handleAssigneeChange = async (newUserId: string, newUserName: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/assignee`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId: newUserId, userName: newUserName }),
+        },
+      );
+
+      if (!res.ok) throw new Error('Failed to update assignee');
+
+      setReport((prev) => prev ? { ...prev, userName: newUserName, userId: newUserId } : prev);
+      setOpenDropdown(null);
+      toast.success(`Assigned to ${newUserName}`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update assignee');
+    }
+  };
+
   const handleDueDate = async (date: Date | undefined) => {
     try {
       const res = await fetch(
@@ -259,20 +301,13 @@ export default function ReportModal({
     if (newComment.trim().length === 0) return;
 
     try {
-      const payload = {
-        reportId: id, // from props or state - the current report id
-        content: newComment.trim(),
-        userId: replyToId,
-        // attachments: [...filePreviews],
-      };
+      const mentionedUserIds = parseMentions(newComment);
 
       const formData = new FormData();
-
-      Object.entries(payload).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
-        }
-      });
+      formData.append('reportId', id);
+      formData.append('content', newComment.trim());
+      if (replyToId) formData.append('userId', replyToId);
+      mentionedUserIds.forEach((uid) => formData.append('mentionedUserIds', uid));
 
       fileNames.forEach((file) => {
         formData.append('attachments', file);
@@ -306,6 +341,29 @@ export default function ReportModal({
   const handleCancelDescription = () => {
     setEditedDescription('');
     setIsEditingDescription(false);
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/description`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ comment: editedDescription }),
+        },
+      );
+      if (!res.ok) throw new Error('Failed to update description');
+      setReport((prev) => prev ? { ...prev, comment: editedDescription } : prev);
+      setIsEditingDescription(false);
+      toast.success('Description updated');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update description');
+    }
   };
 
   const handleReply = async (parentId: string) => {
@@ -538,18 +596,24 @@ export default function ReportModal({
                       onClick={() => setOpenDropdown(null)}
                     />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
-                      {users.map((option) => (
-                        <button
-                          key={option.id}
-                          // onClick={() => handleUpdateField('assignee', option)}
-                          className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                        >
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
-                            {getInitials(option.name)}
-                          </div>
-                          <span>{option.name}</span>
-                        </button>
-                      ))}
+                      {users.map((option) => {
+                        const isCurrentAssignee = option.name === report?.userName;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => handleAssigneeChange(option.id, option.name)}
+                            className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                          >
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs">
+                              {getInitials(option.name)}
+                            </div>
+                            <span className="flex-1 text-left">{option.name}</span>
+                            {isCurrentAssignee && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -768,6 +832,61 @@ export default function ReportModal({
                 </span>
               </div>
             </div>
+
+            {/* Browser */}
+            {report.browser && (
+              <div>
+                <label className="mb-2 block text-xs text-white/40">Browser</label>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Globe className="h-4 w-4 text-white/40" />
+                  <span className="text-sm text-white/80">{report.browser}</span>
+                </div>
+              </div>
+            )}
+
+            {/* OS */}
+            {report.os && (
+              <div>
+                <label className="mb-2 block text-xs text-white/40">OS</label>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Monitor className="h-4 w-4 text-white/40" />
+                  <span className="text-sm text-white/80">{report.os}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Screen Size */}
+            {report.screenSize && (
+              <div>
+                <label className="mb-2 block text-xs text-white/40">Screen Size</label>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Maximize2 className="h-4 w-4 text-white/40" />
+                  <span className="text-sm text-white/80">{report.screenSize}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Viewport */}
+            {report.viewport && (
+              <div>
+                <label className="mb-2 block text-xs text-white/40">Viewport</label>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Scan className="h-4 w-4 text-white/40" />
+                  <span className="text-sm text-white/80">{report.viewport}</span>
+                </div>
+              </div>
+            )}
+
+            {/* CSS Path */}
+            {report.cssPath && (
+              <div className="col-span-2">
+                <label className="mb-2 block text-xs text-white/40">CSS Path</label>
+                <div className="flex items-start gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Layout className="mt-0.5 h-4 w-4 shrink-0 text-white/40" />
+                  <span className="break-all font-mono text-xs text-white/70">{report.cssPath}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -776,7 +895,10 @@ export default function ReportModal({
               <label className="text-xs text-white/40">Description</label>
               {!isEditingDescription && (
                 <button
-                  onClick={() => setIsEditingDescription(true)}
+                  onClick={() => {
+                    setEditedDescription(report.comment || '');
+                    setIsEditingDescription(true);
+                  }}
                   className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-white/40 transition-colors hover:bg-white/8 hover:text-white/60"
                 >
                   <Edit2 className="h-3 w-3" />
@@ -788,11 +910,12 @@ export default function ReportModal({
             {isEditingDescription ? (
               <div>
                 <textarea
-                  value={report.comment}
+                  value={editedDescription}
                   onChange={(e) => setEditedDescription(e.target.value)}
                   placeholder="Add a description..."
                   className="w-full resize-none rounded-lg border border-white/8 bg-[#222] px-3 py-2 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
                   rows={4}
+                  autoFocus
                 />
                 <div className="mt-2 flex justify-end gap-2">
                   <button
@@ -802,7 +925,7 @@ export default function ReportModal({
                     Cancel
                   </button>
                   <button
-                    // onClick={handleSaveDescription}
+                    onClick={handleSaveDescription}
                     className="flex items-center gap-2 rounded-lg bg-indigo-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-indigo-600"
                   >
                     Save
@@ -878,13 +1001,15 @@ export default function ReportModal({
                 {getInitials(user!.name)}
               </div>
               <div className="flex-1">
-                <textarea
+                <MentionTextarea
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={setNewComment}
                   onKeyDown={handleKeyPress}
                   placeholder="Add a comment... (⌘+Enter to send)"
                   className="w-full resize-none rounded-lg border border-white/8 bg-[#222] px-3 py-2 text-sm text-white/90 placeholder-white/30 transition-all focus:border-white/12 focus:outline-none"
                   rows={3}
+                  members={users.map((u) => ({ id: u.id, name: u.name, email: u.email }))}
+                  currentUserId={user?.id}
                 />
 
                 {/* Attachments */}

@@ -11,6 +11,7 @@ import {
   normalizeStatus,
 } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '@/app/providers/ReactQueryProvider';
 import { AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -39,7 +40,7 @@ export default function Page() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary`,
         token,
       ),
-    staleTime: 60 * 1000, // cache for 1 minute
+    staleTime: STALE.STATS,
   });
 
   // --- React Query: Tasks ---
@@ -47,7 +48,7 @@ export default function Page() {
     queryKey: ['tasks'],
     queryFn: () =>
       fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks`, token),
-    staleTime: 60 * 1000, // cache for 1 minute
+    staleTime: STALE.DEFAULT,
   });
 
   const total = issuesSummary.reduce(

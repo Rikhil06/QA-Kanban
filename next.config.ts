@@ -9,10 +9,36 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Bundle OpenTelemetry packages rather than treating them as server-external.
+  // Without this, Next.js looks for require-in-the-middle / import-in-the-middle
+  // as top-level packages, which fails with pnpm's strict hoisting.
+  serverExternalPackages: [],
   headers: async () => [
+    // Security headers on every response
     {
       source: '/(.*)',
       headers: securityHeaders,
+    },
+    // Immutable cache for Next.js compiled assets (content-hashed filenames)
+    {
+      source: '/_next/static/(.*)',
+      headers: [
+        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+      ],
+    },
+    // Short cache for the favicon
+    {
+      source: '/favicon.ico',
+      headers: [
+        { key: 'Cache-Control', value: 'public, max-age=86400' },
+      ],
+    },
+    // Never cache API routes — they're dynamic and auth-gated
+    {
+      source: '/api/(.*)',
+      headers: [
+        { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+      ],
     },
   ],
   images: {

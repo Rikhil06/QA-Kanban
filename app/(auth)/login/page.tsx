@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { setToken } from '@/lib/auth';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getToken, setToken } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
 import { Loader2 } from 'lucide-react';
 import { SocialLoginButtons } from '@/components/authentication/SocialLoginButtons';
@@ -12,7 +12,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const { refreshUser } = useUser();
+
+  // Redirect already-authenticated users away from the login page
+  useEffect(() => {
+    if (getToken()) router.replace(redirectTo ?? '/');
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,7 +40,7 @@ export default function LoginPage() {
     if (res.ok) {
       setToken(data.token);
       await refreshUser();
-      router.push('/');
+      router.push(redirectTo ?? '/');
       setIsLoading(false);
     } else {
       setError(data.error || 'Login failed');

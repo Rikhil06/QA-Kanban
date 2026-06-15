@@ -10,7 +10,6 @@ import { TrustBadges } from '@/components/usage-billing/TrustBadges';
 
 export default function Page() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const [currentPlan, setCurrentPlan] = useState<'free' | 'starter' | 'team' | 'agency'>('free');
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white">
@@ -56,17 +55,14 @@ export default function Page() {
           </div>
 
           {/* Pricing Cards */}
-          <PricingCards 
-            billingPeriod={billingPeriod} 
-            onUpgrade={(plan) => setCurrentPlan(plan)}
-          />
+          <PricingCards billingPeriod={billingPeriod} />
 
           {/* Feature Comparison */}
           <FeatureComparison />
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
-            <UsagePanel currentPlan={currentPlan} />
+            <UsagePanel />
             <PaymentSection />
           </div>
 

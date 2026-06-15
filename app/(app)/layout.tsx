@@ -5,6 +5,7 @@ import AuthGate from "@/components/AuthGate";
 import { SidebarProvider } from "@/context/SidebarContext";
 import MobileBackdrop from "@/components/MobileBackdrop";
 import { ToastContainer } from 'react-toastify';
+import { VerificationBanner } from '@/components/VerificationBanner';
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <MobileBackdrop />
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">
               <Header />
+              <VerificationBanner />
               <main className="relative overflow-y-auto h-full">
                 {children}
               </main>

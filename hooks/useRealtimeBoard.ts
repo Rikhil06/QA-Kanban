@@ -4,11 +4,12 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 
-type BoardEvent =
+export type BoardEvent =
   | { type: 'report:moved'; reportId: string; newStatus: string }
   | { type: 'report:created'; reportId: string }
   | { type: 'report:deleted'; reportId: string }
-  | { type: 'report:updated'; reportId: string }
+  | { type: 'report:updated'; reportId: string; priority?: string }
+  | { type: 'report:status'; reportId: string; status: string }
   | { type: 'column:created' | 'column:deleted' };
 
 interface UseRealtimeBoardOptions {
@@ -89,6 +90,7 @@ export function useRealtimeBoard({
         case 'report:created':
         case 'report:deleted':
         case 'report:updated':
+        case 'report:status':
           invalidateBoard();
           break;
         case 'column:created':

@@ -24,6 +24,7 @@ export function IssueStatusChart() {
   );
 
   if (isLoading) return <p className="text-white">Loading...</p>;
+  if (!issuesSummary) return null;
   const total = issuesSummary.reduce(
     (sum: number, item: Issue) => sum + item.value,
     0,
@@ -76,7 +77,7 @@ export function IssueStatusChart() {
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">{item.value}</span>
               <span className="text-xs text-gray-600 w-12 text-right">
-                {Math.round((item.value / total) * 100)}%
+                {total > 0 ? Math.round((item.value / total) * 100) : 0}%
               </span>
             </div>
           </div>

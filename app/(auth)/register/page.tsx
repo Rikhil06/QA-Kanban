@@ -1,36 +1,77 @@
 'use client';
 
-import { setToken } from '@/lib/auth';
-import { Check, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { getToken, setToken } from '@/lib/auth';
+import { Check, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useUser } from '@/context/UserContext';
 
+const PASSWORD_RULES = [
+  { label: 'At least 8 characters',       test: (p: string) => p.length >= 8 },
+  { label: 'One uppercase letter (A–Z)',   test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'One lowercase letter (a–z)',   test: (p: string) => /[a-z]/.test(p) },
+  { label: 'One number (0–9)',             test: (p: string) => /[0-9]/.test(p) },
+  { label: 'One special character (!@#…)', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail]                       = useState('');
+  const [emailError, setEmailError]             = useState('');
+  const [password, setPassword]                 = useState('');
+  const [passwordTouched, setPasswordTouched]   = useState(false);
+  const [showPassword, setShowPassword]         = useState(false);
+  const [confirmPassword, setConfirmPassword]   = useState('');
+  const [confirmTouched, setConfirmTouched]     = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const router = useRouter();
+  const [name, setName]                         = useState('');
+  const [isLoading, setIsLoading]               = useState(false);
+  const [registerError, setRegisterError]       = useState<string | null>(null);
+  const [inviteCode, setInviteCode]             = useState<string | null>(null);
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo   = searchParams.get('redirect');
   const { refreshUser } = useUser();
 
   useEffect(() => {
+    if (getToken()) router.replace(redirectTo ?? '/');
     if (typeof window !== 'undefined') {
       setInviteCode(localStorage.getItem('invite_code'));
     }
   }, []);
 
-  const features = ['1 project', '25 screenshots / month', 'Cancel anytime'];
+  const passwordValid = PASSWORD_RULES.every((r) => r.test(password));
+  const confirmMatch  = confirmPassword === password;
+
+  const handleEmailBlur = () => {
+    if (email && !isValidEmail(email)) {
+      setEmailError('Please enter a valid email address.');
+    } else {
+      setEmailError('');
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError(null);
+
+    if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    if (!passwordValid) {
+      setPasswordTouched(true);
+      return;
+    }
+    if (!confirmMatch) {
+      setConfirmTouched(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const res = await fetch(
@@ -38,7 +79,7 @@ export default function RegisterPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, name }),
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password, name }),
         },
       );
 
@@ -52,7 +93,9 @@ export default function RegisterPage() {
       setToken(data.token);
       await refreshUser();
 
-      if (inviteCode) {
+      if (redirectTo) {
+        router.push(redirectTo);
+      } else if (inviteCode) {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`, {
           method: 'POST',
           headers: {
@@ -74,6 +117,8 @@ export default function RegisterPage() {
     }
   };
 
+  const features = ['1 project', '25 screenshots / month', 'Cancel anytime'];
+
   return (
     <>
       <div className="mb-8">
@@ -91,6 +136,7 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* Full Name */}
         <div>
           <label htmlFor="name" className="block text-white/80 text-sm mb-2">
             Full Name
@@ -104,11 +150,11 @@ export default function RegisterPage() {
             value={name}
             placeholder="Jane Doe"
             required
-            className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all`}
+            className="w-full bg-[#222] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all"
           />
         </div>
 
-        {/* Email Input */}
+        {/* Email */}
         <div>
           <label htmlFor="email" className="block text-white/80 text-sm mb-2">
             Email address
@@ -118,20 +164,21 @@ export default function RegisterPage() {
             name="email"
             id="email"
             autoComplete="email"
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
+            onBlur={handleEmailBlur}
             value={email}
-            placeholder="test@test.com"
+            placeholder="you@example.com"
             required
-            className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all`}
+            className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all ${emailError ? 'border-red-500/60' : 'border-white/10'}`}
           />
+          {emailError && (
+            <p className="mt-1.5 text-xs text-red-400">{emailError}</p>
+          )}
         </div>
 
-        {/* Password Input */}
+        {/* Password */}
         <div>
-          <label
-            htmlFor="password"
-            className="block text-white/80 text-sm mb-2"
-          >
+          <label htmlFor="password" className="block text-white/80 text-sm mb-2">
             Password
           </label>
           <div className="relative">
@@ -140,10 +187,10 @@ export default function RegisterPage() {
               name="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all pr-12`}
-              placeholder="At least 8 characters"
-              autoComplete="current-password"
+              onChange={(e) => { setPassword(e.target.value); setPasswordTouched(true); }}
+              className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all pr-12 ${passwordTouched && !passwordValid ? 'border-red-500/60' : 'border-white/10'}`}
+              placeholder="Create a strong password"
+              autoComplete="new-password"
               required
             />
             <button
@@ -154,14 +201,30 @@ export default function RegisterPage() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+
+          {/* Password strength checklist */}
+          {passwordTouched && (
+            <ul className="mt-2.5 space-y-1.5">
+              {PASSWORD_RULES.map((rule) => {
+                const passed = rule.test(password);
+                return (
+                  <li key={rule.label} className="flex items-center gap-2">
+                    <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${passed ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/25'}`}>
+                      {passed ? <Check size={10} strokeWidth={3} /> : <X size={10} strokeWidth={3} />}
+                    </span>
+                    <span className={`text-xs ${passed ? 'text-green-400' : 'text-white/40'}`}>
+                      {rule.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
-        {/* Confirm Password Input */}
+        {/* Confirm Password */}
         <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-white/80 text-sm mb-2"
-          >
+          <label htmlFor="confirmPassword" className="block text-white/80 text-sm mb-2">
             Confirm password
           </label>
           <div className="relative">
@@ -169,9 +232,10 @@ export default function RegisterPage() {
               type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all pr-12`}
+              onChange={(e) => { setConfirmPassword(e.target.value); setConfirmTouched(true); }}
+              className={`w-full bg-[#222] border rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all pr-12 ${confirmTouched && !confirmMatch ? 'border-red-500/60' : 'border-white/10'}`}
               placeholder="Re-enter your password"
+              autoComplete="new-password"
               required
             />
             <button
@@ -182,9 +246,12 @@ export default function RegisterPage() {
               {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          {confirmTouched && !confirmMatch && (
+            <p className="mt-1.5 text-xs text-red-400">Passwords do not match.</p>
+          )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
@@ -207,10 +274,7 @@ export default function RegisterPage() {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-1.5 text-white/50 text-xs"
-            >
+            <div key={index} className="flex items-center gap-1.5 text-white/50 text-xs">
               <Check size={14} className="text-green-500/70" />
               <span>{feature}</span>
             </div>
@@ -220,31 +284,21 @@ export default function RegisterPage() {
 
       <p className="text-white/40 text-xs text-center mt-6">
         By signing up, you agree to our{' '}
-        <a
-          href="#"
-          className="text-white/60 hover:text-white/80 underline underline-offset-2 transition-colors"
-        >
-          Terms
+        <a href="https://annoture.com/terms" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white/80 underline underline-offset-2 transition-colors">
+          Terms of Service
         </a>{' '}
         and{' '}
-        <Link
-          href="/privacy-policy"
-          className="text-white/60 hover:text-white/80 underline underline-offset-2 transition-colors"
-        >
+        <a href="https://annoture.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white/80 underline underline-offset-2 transition-colors">
           Privacy Policy
-        </Link>
+        </a>
         .
       </p>
 
-      {/* Secondary Action */}
       <p className="text-white/60 text-sm text-center mt-6">
         Already have an account?{' '}
-        <a
-          href="/login"
-          className="text-white hover:text-white/80 transition-colors"
-        >
+        <Link href="/login" className="text-white hover:text-white/80 transition-colors">
           Log in
-        </a>
+        </Link>
       </p>
     </>
   );

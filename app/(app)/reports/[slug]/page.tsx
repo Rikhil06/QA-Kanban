@@ -9,6 +9,7 @@ import {
   DropResult,
 } from '@hello-pangea/dnd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/app/providers/ReactQueryProvider';
 import { Report, ColumnId, Filters, User, Comment } from '@/types/types';
 import { getToken } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
@@ -17,10 +18,12 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, ChevronLeft, Clock, FileText, GripVertical, Plus, Trash2, X } from 'lucide-react';
+import { Bug, Check, ChevronLeft, Clock, FileText, GripVertical, Plus, Share2, Trash2, X } from 'lucide-react';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 import { toast } from 'react-toastify';
 import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
+import ShareBoardModal from '@/components/ShareBoardModal';
+import { AnimatePresence } from 'motion/react';
 
 type CustomColumn = {
   id: string;
@@ -37,18 +40,48 @@ export default function SiteReportsPage() {
   const token = getToken();
   const slug = params?.slug as string;
   const { user } = useUser();
-  const reportIdParams = new URLSearchParams(searchParams.toString());
   const reportIdFromUrl = searchParams.get('report');
   const [selectedId, setSelectedId] = useState<string | null>(reportIdFromUrl);
 
-  const [filters, setFilters] = useState<Filters>({
-    status: [],
-    priority: [],
-    assignee: [],
-    pages: [],
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  // ── Helpers to read/write filters as URL params ────────────────────────────
+  const parseArr = (key: string) => {
+    const v = searchParams.get(key);
+    return v ? v.split(',').filter(Boolean) : [];
+  };
+
+  const filters: Filters = {
+    status:   parseArr('status'),
+    priority: parseArr('priority'),
+    assignee: parseArr('assignee'),
+    pages:    parseArr('pages'),
+  };
+  const searchQuery = searchParams.get('q') ?? '';
+  const sortOrder   = (searchParams.get('sort') ?? 'newest') as 'newest' | 'oldest';
+
+  const applyFilters = (next: Partial<Filters & { q: string; sort: string }>) => {
+    const p = new URLSearchParams(searchParams.toString());
+    const arrKeys = ['status', 'priority', 'assignee', 'pages'] as const;
+    arrKeys.forEach((k) => {
+      const v = (next as any)[k];
+      if (v !== undefined) {
+        if (v.length) p.set(k, v.join(','));
+        else p.delete(k);
+      }
+    });
+    if ('q' in next) {
+      if (next.q) p.set('q', next.q);
+      else p.delete('q');
+    }
+    if ('sort' in next) {
+      if (next.sort && next.sort !== 'newest') p.set('sort', next.sort!);
+      else p.delete('sort');
+    }
+    router.replace(`?${p.toString()}`, { scroll: false });
+  };
+
+  const setFilters = (f: Filters) => applyFilters(f);
+  const setSearchQuery = (q: string) => applyFilters({ q });
+  const setSortOrder = (sort: 'newest' | 'oldest') => applyFilters({ sort });
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const newColumnInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +109,7 @@ export default function SiteReportsPage() {
   };
   const orderInitialized = useRef(false);
   const [isLive, setIsLive] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -115,6 +149,7 @@ export default function SiteReportsPage() {
         reports.map(async (report) => {
           const res = await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${report.id}/comments`,
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           commentsMap[report.id] = await res.json();
         }),
@@ -122,7 +157,7 @@ export default function SiteReportsPage() {
 
       return { reports, comments: commentsMap };
     },
-    staleTime: 60 * 1000,
+    staleTime: STALE.DEFAULT,
   });
 
   const reports = data?.reports || [];
@@ -425,14 +460,16 @@ export default function SiteReportsPage() {
   // -------------------- Modal --------------------
   const openModal = (id: string) => {
     setSelectedId(id);
-    reportIdParams.set('report', id);
-    router.push(`?${reportIdParams.toString()}`);
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('report', id);
+    router.push(`?${p.toString()}`);
   };
 
   const closeModal = () => {
     setSelectedId(null);
-    reportIdParams.delete('report');
-    router.push(`?${reportIdParams.toString()}`);
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('report');
+    router.push(`?${p.toString()}`);
   };
 
   const handleReportDeleted = (deletedId: string) => {
@@ -461,14 +498,26 @@ export default function SiteReportsPage() {
           users={users}
           pages={uniquePages}
         />
-        {/* Live indicator — shown when WebSocket is connected */}
-        <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 mr-6 rounded-full border transition-all ${
-          isLive
-            ? 'bg-green-500/10 border-green-500/20 text-green-400'
-            : 'bg-white/5 border-white/10 text-white/30'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-green-400 animate-pulse' : 'bg-white/20'}`} />
-          {isLive ? 'Live' : 'Connecting...'}
+        {/* Right-side header controls */}
+        <div className="flex items-center gap-2 mr-4">
+          {/* Share button */}
+          <button
+            onClick={() => setIsShareOpen(true)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/4 text-white/50 hover:text-white/80 hover:bg-white/8 hover:border-white/15 transition-all"
+          >
+            <Share2 className="w-3 h-3" />
+            Share
+          </button>
+
+          {/* Live indicator */}
+          <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${
+            isLive
+              ? 'bg-green-500/10 border-green-500/20 text-green-400'
+              : 'bg-white/5 border-white/10 text-white/30'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-green-400 animate-pulse' : 'bg-white/20'}`} />
+            {isLive ? 'Live' : 'Connecting...'}
+          </div>
         </div>
       </div>
       <div className="flex h-[calc(100vh-8.5rem)] overflow-x-auto">
@@ -496,7 +545,7 @@ export default function SiteReportsPage() {
                           <div
                             ref={colProvided.innerRef}
                             {...colProvided.draggableProps}
-                            className={`flex flex-col overflow-hidden rounded-xl border transition-all duration-200 border-white/6 bg-[#1C1C1C]/40 ${isCollapsed ? 'w-14 min-w-[3.5rem]' : 'min-w-[320px]'} ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
+                            className={`flex flex-col overflow-hidden rounded-xl border transition-all duration-200 border-white/6 bg-[#1C1C1C]/40 ${isCollapsed ? 'w-14 min-w-[3.5rem]' : 'min-w-[320px] max-w-[320px]'} ${colSnapshot.isDragging ? 'shadow-2xl shadow-black/40 ring-1 ring-white/10' : ''}`}
                           >
                             {showCollapsed ? (
                               /* ---- Collapsed view ---- */
@@ -755,6 +804,16 @@ export default function SiteReportsPage() {
           />
         )}
       </div>
+
+      <AnimatePresence>
+        {isShareOpen && (
+          <ShareBoardModal
+            slug={slug}
+            siteName={slug}
+            onClose={() => setIsShareOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

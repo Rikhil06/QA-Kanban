@@ -1,10 +1,15 @@
+import { getToken } from './auth';
+
 export const fetchUsersForSite = async (siteId: string) => {
   try {
+    const token = getToken();
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/users`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
     );
 
-    // If response is not OK, fallback immediately
     if (!res.ok) {
       console.warn('Failed to fetch users, falling back to empty array');
       return [];
@@ -12,7 +17,6 @@ export const fetchUsersForSite = async (siteId: string) => {
 
     return await res.json();
   } catch (error) {
-    // Network / parsing / unexpected errors land here
     console.error('Error fetching users for site:', error);
     return [];
   }

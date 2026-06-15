@@ -106,6 +106,7 @@ export default function Sidebar() {
     getSites();
   }, []);
 
+
   async function handleInviteSubmit(
     e: React.FormEvent<HTMLFormElement>,
     siteId: string,
@@ -276,11 +277,11 @@ export default function Sidebar() {
             <div>
               {activeSites.map((site) => (
                 <Link
-                  key={site.id}
-                  className={`flex items-center justify-between gap-2 p-2 ml-8 text-gray-100 text-sm ${pathname.includes(`reports/${stripTLD(site.site)}`) ? 'bg-[#3b3b3a] rounded-xl mt-2' : ''}`}
-                  href={`/reports/${stripTLD(site.site)}`}
+                  key={site.slug}
+                  className={`flex items-center justify-between gap-2 p-2 ml-8 text-gray-100 text-sm ${pathname.includes(`reports/${site.slug}`) ? 'bg-[#3b3b3a] rounded-xl mt-2' : ''}`}
+                  href={`/reports/${site.slug}`}
                 >
-                  {Capitalize(stripTLD(site.site))}
+                  {site.siteName || Capitalize(stripTLD(site.site))}
                   <CiShare1 />
                 </Link>
               ))}
@@ -490,6 +491,13 @@ export default function Sidebar() {
               <FiMessageSquare />
               <IoIosNotificationsOutline />
             </div>
+          </div>
+          <div className="flex items-center gap-3 px-2 mt-3">
+            <a href="https://annoture.com/terms" target="_blank" rel="noopener noreferrer" className="text-white/25 text-[10px] hover:text-white/50 transition-colors">Terms</a>
+            <span className="text-white/15 text-[10px]">·</span>
+            <a href="https://annoture.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-white/25 text-[10px] hover:text-white/50 transition-colors">Privacy</a>
+            <span className="text-white/15 text-[10px]">·</span>
+            <a href="https://annoture.com/cookies" target="_blank" rel="noopener noreferrer" className="text-white/25 text-[10px] hover:text-white/50 transition-colors">Cookies</a>
           </div>
         </div>
       </div>

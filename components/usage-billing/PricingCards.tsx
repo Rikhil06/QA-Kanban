@@ -5,10 +5,9 @@ import { Capitalize } from '@/utils/helpers';
 
 interface PricingCardsProps {
   billingPeriod: 'monthly' | 'yearly';
-  onUpgrade: (plan: 'free' | 'starter' | 'team' | 'agency') => void;
 }
 
-export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
+export function PricingCards({ billingPeriod }: PricingCardsProps) {
   const plans = [
     {
       id: 'free' as const,
@@ -191,7 +190,7 @@ export function PricingCards({ billingPeriod, onUpgrade }: PricingCardsProps) {
                 </button>
               ) : (
                 <UpgradeButton
-                  onClick={() => onUpgrade(plan.id)}
+                  onClick={() => {}}
                   teamId={user?.teamId}
                   priceId={getStripePriceId(plan.id, billingPeriod)!}
                   planName={plan.name}
