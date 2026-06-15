@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { getToken } from '@/lib/auth';
 import { fetcher } from '@/lib/fetcher';
 import { timeAgo } from '@/utils/helpers';
@@ -72,7 +73,7 @@ function UserPlusIcon({ className }: { className?: string }) {
 }
 
 // ── Lookup helpers ─────────────────────────────────────────────────────────
-type IconComponent = (props: { className?: string }) => JSX.Element;
+type IconComponent = (props: { className?: string }) => React.ReactElement;
 
 const ICON_MAP: Record<string, IconComponent> = {
   TASK_OVERDUE:   TriangleAlertIcon,
