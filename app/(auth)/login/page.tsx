@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getToken, setToken } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
@@ -9,6 +9,14 @@ import { SocialLoginButtons } from '@/components/authentication/SocialLoginButto
 import Link from 'next/link';
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
