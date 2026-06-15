@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Site } from '@/types/types';
-import { ExternalLink, MoreVertical, Kanban, List, Camera, Settings, Archive, Pin } from 'lucide-react';
+import { ExternalLink, MoreVertical, Kanban, List, Camera, Settings, Archive, Pin, Trash2 } from 'lucide-react';
 import { Capitalize, getInitials, timeAgo } from '@/utils/helpers';
 import slugify from 'slugify';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ interface SiteCardProps {
   toggleSiteArchive: (id: string, shouldArchive: boolean) => Promise<any>;
   pinSite?: (id: string) => Promise<any>;
   unpinSite?: (id: string) => Promise<any>;
+  deleteSite?: (slug: string) => Promise<any>;
 }
 
 type QuickActionProps = {
@@ -26,8 +27,10 @@ type QuickActionProps = {
 // const token = getToken();
 // if (!token) // router.push('/login'); // or show login modal
 
-export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite }: SiteCardProps) {
+export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite, deleteSite }: SiteCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const highUrgentIssues = site.priorities.high + site.priorities.urgent;
 
@@ -62,11 +65,24 @@ export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite }
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
+        setConfirmDelete(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleDeleteSite = async () => {
+    if (!deleteSite) return;
+    setDeleting(true);
+    try {
+      await deleteSite(stripTLD(site.slug));
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+      setIsMenuOpen(false);
+    }
+  };
 
    const handleArchive = () => {
     toggleSiteArchive(stripTLD(site.slug), true);
@@ -166,7 +182,29 @@ export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite }
               <QuickAction icon={Camera} label="View Screenshots" />
               <QuickAction icon={Settings} label="Settings" />
               <div className="h-px bg-white/8 my-1" />
-                <QuickAction icon={Archive} label={site.siteStatus === 'archived' ? 'Unarchive site' : 'Archive Site'} danger onClick={site.siteStatus === 'archived' ? handleUnarchive : handleArchive} />
+              <QuickAction icon={Archive} label={site.siteStatus === 'archived' ? 'Unarchive site' : 'Archive Site'} danger onClick={site.siteStatus === 'archived' ? handleUnarchive : handleArchive} />
+              {confirmDelete ? (
+                <div className="px-4 py-2.5">
+                  <p className="text-xs text-red-400 mb-2">Delete all reports? This cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteSite}
+                      disabled={deleting}
+                      className="flex-1 text-xs bg-red-500/20 text-red-400 border border-red-500/30 rounded px-2 py-1 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                    >
+                      {deleting ? 'Deleting…' : 'Yes, delete'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="flex-1 text-xs text-white/50 border border-white/10 rounded px-2 py-1 hover:bg-white/5 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <QuickAction icon={Trash2} label="Delete Site" danger onClick={() => setConfirmDelete(true)} />
+              )}
             </div>
           )}
         </div>

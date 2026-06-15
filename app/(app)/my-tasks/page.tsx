@@ -14,22 +14,48 @@ import { useQuery } from '@tanstack/react-query';
 import { STALE } from '@/app/providers/ReactQueryProvider';
 import { AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import useSWR from 'swr';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Page() {
+  return (
+    <Suspense>
+      <MyTasksContent />
+    </Suspense>
+  );
+}
+
+function MyTasksContent() {
   const token = getToken();
-  const [viewMode, setViewMode] = useState<'list' | 'compact'>('list');
+  const router = useRouter();
+  const params = useSearchParams();
+
+  const [viewMode, setViewMode] = useState<'list' | 'compact'>(
+    (params.get('view') as 'list' | 'compact') ?? 'list',
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
-  const [siteFilter, setSiteFilter] = useState<string[]>([]);
-  const [dueDateFilter, setDueDateFilter] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('dueDate');
-  const [groupBy, setGroupBy] = useState<
-    'dueDate' | 'status' | 'site' | 'none'
-  >('dueDate');
+  const [statusFilter, setStatusFilter] = useState<string[]>(params.getAll('status'));
+  const [priorityFilter, setPriorityFilter] = useState<string[]>(params.getAll('priority'));
+  const [siteFilter, setSiteFilter] = useState<string[]>(params.getAll('site'));
+  const [dueDateFilter, setDueDateFilter] = useState<string[]>(params.getAll('due'));
+  const [sortBy, setSortBy] = useState(params.get('sort') ?? 'dueDate');
+  const [groupBy, setGroupBy] = useState<'dueDate' | 'status' | 'site' | 'none'>(
+    (params.get('group') as 'dueDate' | 'status' | 'site' | 'none') ?? 'dueDate',
+  );
   const isCompact = viewMode === 'compact';
+
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (viewMode !== 'list') p.set('view', viewMode);
+    if (sortBy !== 'dueDate') p.set('sort', sortBy);
+    if (groupBy !== 'dueDate') p.set('group', groupBy);
+    statusFilter.forEach((v) => p.append('status', v));
+    priorityFilter.forEach((v) => p.append('priority', v));
+    siteFilter.forEach((v) => p.append('site', v));
+    dueDateFilter.forEach((v) => p.append('due', v));
+    const qs = p.toString();
+    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+  }, [viewMode, sortBy, groupBy, statusFilter, priorityFilter, siteFilter, dueDateFilter]);
 
   const { data: issuesSummary = [], isLoading: issuesLoading } = useQuery<
     StatusData[]
@@ -97,6 +123,37 @@ export default function Page() {
       return true;
     });
   }, [tasks, searchQuery, statusFilter, priorityFilter, siteFilter]);
+
+  const priorityOrder: Record<string, number> = {
+    urgent: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
+    'not assigned': 0,
+  };
+
+  const sortedFilteredTasks = useMemo(() => {
+    const sorted = [...filteredTasks];
+    if (sortBy === 'dueDate') {
+      sorted.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+    } else if (sortBy === 'priority') {
+      sorted.sort(
+        (a, b) =>
+          (priorityOrder[b.priority] ?? 0) - (priorityOrder[a.priority] ?? 0),
+      );
+    } else if (sortBy === 'updated') {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    }
+    return sorted;
+  }, [filteredTasks, sortBy]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -175,29 +232,29 @@ export default function Page() {
   };
 
   const overdueTasks = useMemo(
-    () => filterTasks(filteredTasks, 'overdue'),
-    [filteredTasks],
+    () => filterTasks(sortedFilteredTasks, 'overdue'),
+    [sortedFilteredTasks],
   );
   const todayTasks = useMemo(
-    () => filterTasks(filteredTasks, 'today'),
-    [filteredTasks],
+    () => filterTasks(sortedFilteredTasks, 'today'),
+    [sortedFilteredTasks],
   );
   const weekTasks = useMemo(
-    () => filterTasks(filteredTasks, 'week'),
-    [filteredTasks],
+    () => filterTasks(sortedFilteredTasks, 'week'),
+    [sortedFilteredTasks],
   );
   const upcomingTasks = useMemo(
-    () => filterTasks(filteredTasks, 'upcoming'),
-    [filteredTasks],
+    () => filterTasks(sortedFilteredTasks, 'upcoming'),
+    [sortedFilteredTasks],
   );
   const noDueTasks = useMemo(
-    () => filterTasks(filteredTasks, 'noDue'),
-    [filteredTasks],
+    () => filterTasks(sortedFilteredTasks, 'noDue'),
+    [sortedFilteredTasks],
   );
   const dateFilteredTasks = useMemo(() => {
-    if (dueDateFilter.length === 0) return filteredTasks;
-    return filterTasks(filteredTasks, dueDateFilter[0] as any);
-  }, [filteredTasks, dueDateFilter]);
+    if (dueDateFilter.length === 0) return sortedFilteredTasks;
+    return filterTasks(sortedFilteredTasks, dueDateFilter[0] as any);
+  }, [sortedFilteredTasks, dueDateFilter]);
 
   const renderTaskSection = (title: string, tasks: Task[]) => {
     if (tasks.length === 0) return null; // skip empty sections
@@ -237,9 +294,9 @@ export default function Page() {
                   {!isCompact && (
                     <>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs border ${normalizeStatus(getStatusColor(task.status))}`}
+                        className={`px-2 py-0.5 rounded-full text-xs border ${getStatusColor(task.status)}`}
                       >
-                        {normalizeStatus(task.status)}
+                        {task.statusLabel ?? normalizeStatus(task.status)}
                       </span>
                       <span className="text-white/40 text-xs">{task.site}</span>
                     </>
@@ -248,9 +305,9 @@ export default function Page() {
                 {isCompact && (
                   <div className="flex items-center gap-2 mt-1">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[11px] border ${normalizeStatus(getStatusColor(task.status))}`}
+                      className={`px-2 py-0.5 rounded-full text-[11px] border ${getStatusColor(task.status)}`}
                     >
-                      {normalizeStatus(task.status)}
+                      {task.statusLabel ?? normalizeStatus(task.status)}
                     </span>
                     <span className="text-white/40 text-xs">{task.site}</span>
                   </div>
@@ -342,9 +399,10 @@ export default function Page() {
             )}
 
             {groupBy === 'status' &&
-              Object.entries(groupedByStatus).map(([status, tasks]) =>
-                renderTaskSection(normalizeStatus(status), tasks),
-              )}
+              Object.entries(groupedByStatus).map(([status, tasks]) => {
+                const label = (tasks as Task[])[0]?.statusLabel ?? normalizeStatus(status);
+                return renderTaskSection(label, tasks);
+              })}
 
             {groupBy === 'site' &&
               Object.entries(groupedBySite).map(([site, tasks]) =>

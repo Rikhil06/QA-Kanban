@@ -50,9 +50,11 @@ export type Comment = {
 
 export interface ReportModalProps {
     id: string;
+    slug?: string;
     onClose: () => void;
     onDeleteSuccess?: (deletedId: string) => void;
     onMoveSuccess?: (reportId: string, newStatus: ColumnId) => void;
+    onAssigneeChange?: (reportId: string, newUserName: string) => void;
 }
 
 export type Site = {
@@ -94,6 +96,7 @@ export type Task = {
     title: string,
     site: string,
     status: string,
+    statusLabel?: string | null,
     priority: 'not assigned' | 'low' | 'medium' | 'high' | 'urgent',
     dueDate: string,
     project: string,
@@ -120,7 +123,7 @@ export type Activity = {
   priority: string;
   time: string;
   type: string;
-  link: string;
+  link: string | null;
   dueDate: string,
   user: {
     name: string;

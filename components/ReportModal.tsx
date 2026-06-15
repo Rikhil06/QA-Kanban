@@ -52,11 +52,18 @@ import { Button } from './ui/button';
 import { CalendarCN } from './ui/calendar';
 import { deleteReport } from '@/utils/deleteReport';
 
+type CustomColumn = { id: string; name: string; slug: string };
+const BASE_COLUMN_IDS = new Set(['new', 'inProgress', 'done']);
+const CUSTOM_COLUMN_COLORS = ['#a855f7', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'];
+const columnColor = (index: number) => CUSTOM_COLUMN_COLORS[index % CUSTOM_COLUMN_COLORS.length];
+
 export default function ReportModal({
   id,
+  slug,
   onClose,
   onDeleteSuccess,
   onMoveSuccess,
+  onAssigneeChange,
 }: ReportModalProps) {
   const { user, loading } = useUser();
   const token = getToken();
@@ -65,7 +72,9 @@ export default function ReportModal({
   const [report, setReport] = useState<Report | null>(null);
   const [status, setStatus] = useState<string>('');
   const [priority, setPriority] = useState<string>('');
+  const [issueType, setIssueType] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
+  const [customColumns, setCustomColumns] = useState<CustomColumn[]>([]);
 
   const [comments, setComments] = useState<Comment[]>();
   const [newComment, setNewComment] = useState('');
@@ -98,6 +107,7 @@ export default function ReportModal({
       // Seed status + priority from the single report fetch — no extra round-trips needed.
       if (data.status) setStatus(data.status);
       if (data.priority) setPriority(data.priority);
+      if (data.type) setIssueType(data.type);
     };
 
     const fetchComments = async () => {
@@ -110,12 +120,21 @@ export default function ReportModal({
       setComments(data);
     };
 
+    const fetchCustomColumns = async () => {
+      if (!slug) return;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns?teamId=${user?.teamId}`,
+        { headers },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setCustomColumns(data);
+    };
+
     fetchReport();
     fetchComments();
-
-
-
-  }, [id]);
+    fetchCustomColumns();
+  }, [id, slug, user?.teamId]);
 
   useEffect(() => {
     const siteId = pathname?.split('/').pop();
@@ -247,11 +266,31 @@ export default function ReportModal({
       if (!res.ok) throw new Error('Failed to update assignee');
 
       setReport((prev) => prev ? { ...prev, userName: newUserName, userId: newUserId } : prev);
+      onAssigneeChange?.(id, newUserName);
       setOpenDropdown(null);
       toast.success(`Assigned to ${newUserName}`);
     } catch (error) {
       console.error(error);
       toast.error('Failed to update assignee');
+    }
+  };
+
+  const handleTypeChange = async (newType: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/type`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ type: newType }),
+        },
+      );
+      if (!res.ok) throw new Error('Failed to update type');
+      setIssueType(newType);
+      setOpenDropdown(null);
+      toast.success('Issue type updated!');
+    } catch {
+      toast.error('Failed to update issue type');
     }
   };
 
@@ -631,12 +670,21 @@ export default function ReportModal({
                   className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
                   <div
-                    className={`h-2 w-2 rounded-full ${status === 'new' ? 'bg-sky-500' : status === 'inProgress' ? 'bg-orange-500' : 'bg-indigo-500'}`}
+                    className="h-2 w-2 rounded-full"
+                    style={{
+                      backgroundColor:
+                        status === 'new' ? '#0ea5e9'
+                        : status === 'inProgress' ? '#f97316'
+                        : status === 'done' ? '#6366f1'
+                        : columnColor(customColumns.findIndex((c) => c.id === status)),
+                    }}
                   />
                   <span className="text-sm capitalize text-white/80">
                     {status === 'inProgress'
                       ? 'In Progress'
-                      : Capitalize(status)}
+                      : BASE_COLUMN_IDS.has(status)
+                        ? Capitalize(status)
+                        : (customColumns.find((c) => c.id === status)?.name ?? status)}
                   </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
@@ -669,6 +717,19 @@ export default function ReportModal({
                         <div className="h-2 w-2 rounded-full bg-indigo-500" />
                         <span className="capitalize">Done</span>
                       </button>
+                      {customColumns.map((col, i) => (
+                        <button
+                          key={col.id}
+                          onClick={() => handleMoveTo(col.id as ColumnId)}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: columnColor(i) }}
+                          />
+                          <span>{col.name}</span>
+                        </button>
+                      ))}
                     </div>
                   </>
                 )}
@@ -758,28 +819,25 @@ export default function ReportModal({
                   }
                   className="flex w-full items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 transition-colors hover:border-white/12"
                 >
-                  {/* <Icon className="h-4 w-4 text-white/40" /> */}
                   <span className="text-sm capitalize text-white/80">
-                    Contrast issue
+                    {issueType || 'Select type'}
                   </span>
                   <ChevronDown className="ml-auto h-3.5 w-3.5 text-white/40" />
                 </button>
 
                 {openDropdown === 'type' && (
                   <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setOpenDropdown(null)}
-                    />
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-white/8 bg-[#222] p-1 shadow-2xl">
-                      {/* // const TypeIcon = typeIcons[option]; */}
-                      <button
-                        // onClick={() => handleUpdateField('type', option)}
-                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
-                      >
-                        {/* <TypeIcon className="h-4 w-4 text-white/40" /> */}
-                        <span className="capitalize">Contrast issue</span>
-                      </button>
+                      {['bug', 'suggestion', 'task'].map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => handleTypeChange(t)}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/8"
+                        >
+                          <span className="capitalize">{t}</span>
+                        </button>
+                      ))}
                     </div>
                   </>
                 )}

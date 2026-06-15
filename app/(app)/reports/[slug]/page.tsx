@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, notFound } from 'next/navigation';
 import {
   DragDropContext,
   Droppable,
@@ -138,7 +138,7 @@ function SiteReportsContent() {
   });
 
   // -------------------- Fetch Reports + Comments --------------------
-  const { data } = useQuery<{
+  const { data, error: reportsError } = useQuery<{
     reports: Report[];
     comments: Record<string, Comment[]>;
   }>({
@@ -150,6 +150,11 @@ function SiteReportsContent() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+      if (res.status === 404 || res.status === 403) {
+        const err = new Error('NOT_FOUND') as Error & { status: number };
+        err.status = 404;
+        throw err;
+      }
       const reports: Report[] = await res.json();
 
       const commentsMap: Record<string, Comment[]> = {};
@@ -166,13 +171,16 @@ function SiteReportsContent() {
       return { reports, comments: commentsMap };
     },
     staleTime: STALE.DEFAULT,
+    retry: false,
   });
+
+  if ((reportsError as any)?.status === 404) notFound();
 
   const reports = data?.reports || [];
   const commentsByReportId = data?.comments || {};
 
   // -------------------- Fetch Custom Columns --------------------
-  const { data: customColumns = [] } = useQuery<CustomColumn[]>({
+  const { data: customColumns = [], isLoading: columnsLoading } = useQuery<CustomColumn[]>({
     queryKey: ['columns', slug, user?.teamId],
     queryFn: async () => {
       const res = await fetch(
@@ -204,6 +212,7 @@ function SiteReportsContent() {
   useEffect(() => {
     if (orderInitialized.current) return;
     if (savedOrder === undefined) return; // still fetching
+    if (columnsLoading) return; // wait for custom columns before locking in the order
 
     orderInitialized.current = true;
 
@@ -803,11 +812,26 @@ function SiteReportsContent() {
         {selectedId && (
           <ReportModal
             id={selectedId}
+            slug={slug}
             onClose={closeModal}
             onDeleteSuccess={handleReportDeleted}
             onMoveSuccess={(updatedId: string, newStatus: ColumnId) => {
               mutation.mutate({ reportId: updatedId, newStatus });
               setSelectedId(null);
+            }}
+            onAssigneeChange={(reportId, newUserName) => {
+              queryClient.setQueryData(
+                ['reports', slug, user?.teamId],
+                (old: { reports: Report[]; comments: Record<string, Comment[]> } | undefined) => {
+                  if (!old) return old;
+                  return {
+                    ...old,
+                    reports: old.reports.map((r) =>
+                      r.id === reportId ? { ...r, userName: newUserName } : r
+                    ),
+                  };
+                }
+              );
             }}
           />
         )}

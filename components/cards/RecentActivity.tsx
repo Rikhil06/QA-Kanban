@@ -92,9 +92,13 @@ export function RecentActivity() {
                       <p className="text-sm text-gray-300 mb-1">
                         <span className="text-white">{activity.user.name}</span>{' '}
                         {activity.action}{' '}
-                        <Link href={activity.link} className="text-white">
-                          {activity.target}
-                        </Link>
+                        {activity.link ? (
+                          <Link href={activity.link as string} className="text-white">
+                            {activity.target}
+                          </Link>
+                        ) : (
+                          <span className="text-white">{activity.target}</span>
+                        )}
                         {activity.status && (
                           <>
                             {' '}

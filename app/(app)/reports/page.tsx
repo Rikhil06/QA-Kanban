@@ -40,6 +40,23 @@ export default function SitesPage() {
     getSites();
   }, []);
 
+  async function deleteSite(slug: string) {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    if (!res.ok) {
+      const { error } = await res.json();
+      throw new Error(error);
+    }
+
+    setSites((prev) => prev.filter((site) => stripTLD(site.slug) !== slug));
+  }
+
   async function toggleSiteArchive(id: string, shouldArchive: boolean) {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/archive`,
@@ -237,6 +254,7 @@ export default function SitesPage() {
                       site={site}
                       toggleSiteArchive={toggleSiteArchive}
                       unpinSite={unpinSite}
+                      deleteSite={deleteSite}
                     />
                   ))}
                 </div>
@@ -260,6 +278,7 @@ export default function SitesPage() {
                       site={site}
                       toggleSiteArchive={toggleSiteArchive}
                       pinSite={pinSite}
+                      deleteSite={deleteSite}
                     />
                   ))}
                 </div>
@@ -285,6 +304,7 @@ export default function SitesPage() {
                       site={site}
                       toggleSiteArchive={toggleSiteArchive}
                       pinSite={pinSite}
+                      deleteSite={deleteSite}
                     />
                   ))}
                 </div>

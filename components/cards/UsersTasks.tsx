@@ -34,6 +34,11 @@ const statusConfig = {
     bg: 'bg-green-500/10',
     border: 'border-green-500/20',
   },
+  Custom: {
+    color: 'text-teal-400',
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/20',
+  },
 } as const;
 
 export function UsersTasks() {
@@ -59,14 +64,11 @@ export function UsersTasks() {
 
   function normalizeStatus(value: string): keyof typeof statusConfig {
     const v = value.toLowerCase();
-
     if (v === 'new') return 'New';
-    if (v === 'inprogress' || v === 'in progress' || v === 'inprogress')
-      return 'In Progress';
+    if (v === 'inprogress' || v === 'in progress') return 'In Progress';
     if (v === 'qa') return 'QA';
     if (v === 'done') return 'Done';
-
-    return 'New'; // fallback
+    return 'Custom';
   }
 
   if (isLoading) return <p className="text-white">Loading...</p>;
@@ -108,7 +110,9 @@ export function UsersTasks() {
           {tasks.map((task: Task) => {
             const priorityStyle =
               priorityConfig[normalizePriority(task.priority)];
-            const statusStyle = statusConfig[normalizeStatus(task.status)];
+            const normalizedStatus = normalizeStatus(task.status);
+            const statusStyle = statusConfig[normalizedStatus];
+            const statusLabel = task.statusLabel ?? (normalizedStatus === 'Custom' ? task.status : normalizedStatus);
             const PriorityIcon = priorityStyle.icon;
 
             return (
@@ -118,7 +122,7 @@ export function UsersTasks() {
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">
-                    {task.status === 'Done' ? (
+                    {task.status === 'done' ? (
                       <CheckCircle2 className="w-4 h-4 text-green-400" />
                     ) : (
                       <Circle className="w-4 h-4 text-gray-600 group-hover:text-gray-500 transition-colors" />
@@ -134,7 +138,7 @@ export function UsersTasks() {
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}
                       >
-                        {normalizeStatus(Capitalize(task.status))}
+                        {statusLabel}
                       </span>
 
                       <span

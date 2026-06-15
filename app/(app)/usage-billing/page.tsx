@@ -1,24 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 import { PricingCards } from '@/components/usage-billing/PricingCards';
 import { FeatureComparison } from '@/components/usage-billing/FeatureComparison';
 import { UsagePanel } from '@/components/usage-billing/UsagePanel';
 import { PaymentSection } from '@/components/usage-billing/PaymentSection';
 import { TrustBadges } from '@/components/usage-billing/TrustBadges';
+import { getToken } from '@/lib/auth';
+import { useUser } from '@/context/UserContext';
+import { toast } from 'react-toastify';
 
 export default function Page() {
+  return (
+    <Suspense>
+      <UsageBillingContent />
+    </Suspense>
+  );
+}
+
+function UsageBillingContent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const params = useSearchParams();
+  const router = useRouter();
+  const token = getToken();
+  const { refreshUser } = useUser();
+  const verified = useRef(false);
+
+  useEffect(() => {
+    const sessionId = params.get('session_id');
+    if (!sessionId || verified.current) return;
+    verified.current = true;
+
+    async function verifySession() {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/verify-session?sessionId=${sessionId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        const data = await res.json();
+        if (res.ok) {
+          await refreshUser();
+          toast.success(`🎉 You're now on the ${data.plan.charAt(0).toUpperCase() + data.plan.slice(1)} plan!`);
+        } else {
+          toast.error(data.error ?? 'Could not verify subscription');
+        }
+      } catch {
+        toast.error('Could not verify subscription');
+      } finally {
+        // Clean the session_id from the URL
+        router.replace('/usage-billing', { scroll: false });
+      }
+    }
+
+    verifySession();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white">
-      {/* Main Content */}
       <main className="min-h-screen">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
             <div className="mb-16">
-
-            {/* Page Title */}
             <div className="text-center">
                 <h1 className="text-white mb-3">Plans & Billing</h1>
                 <p className="text-white/60">Choose a plan that fits how you work.</p>
@@ -54,19 +97,14 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Pricing Cards */}
           <PricingCards billingPeriod={billingPeriod} />
-
-          {/* Feature Comparison */}
           <FeatureComparison />
 
-          {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
             <UsagePanel />
             <PaymentSection />
           </div>
 
-          {/* Trust Badges */}
           <TrustBadges />
         </div>
       </main>
