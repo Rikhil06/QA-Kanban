@@ -281,7 +281,7 @@ export default function Sidebar() {
                   className={`flex items-center justify-between gap-2 p-2 ml-8 text-gray-100 text-sm ${pathname.includes(`reports/${site.slug}`) ? 'bg-[#3b3b3a] rounded-xl mt-2' : ''}`}
                   href={`/reports/${site.slug}`}
                 >
-                  {site.siteName || Capitalize(stripTLD(site.site))}
+                  {Capitalize(stripTLD(site.site))}
                   <CiShare1 />
                 </Link>
               ))}
