@@ -17,6 +17,7 @@ const cspValue = [
     'https://o*.ingest.sentry.io',
     isDev ? 'http://localhost:* ws://localhost:*' : '',
   ].filter(Boolean).join(' '),
+  "media-src 'self' https://*.r2.cloudflarestorage.com",
   "object-src 'none'",
   "frame-ancestors 'self'",
 ].join('; ');
