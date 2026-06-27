@@ -8,7 +8,7 @@ import useSWR from 'swr';
 
 // Mirrors PLAN_LIMITS in server.js — null means unlimited
 const PLAN_LIMITS: Record<string, { reports: number | null; members: number | null; sites: number | null }> = {
-  free:    { reports: 25,  members: 5,   sites: 3 },
+  free:    { reports: 100, members: 5,   sites: 3 },
   starter: { reports: 300, members: 10,  sites: 5 },
   team:    { reports: null, members: null, sites: null },
   agency:  { reports: null, members: null, sites: null },

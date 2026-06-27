@@ -30,8 +30,9 @@ export default function CommentItem({ comment, onReply, depth = 0 }: { comment: 
           <div className="mt-2 space-y-1.5">
             {comment.attachments.map((attachment: any, index) => {
                 const isImage = attachment.type.startsWith('image/');
+                const isSafeUrl = (u: string | undefined) => !!u && /^https:\/\//i.test(u);
 
-                if (isImage && attachment.thumbnailUrl) {
+                if (isImage && isSafeUrl(attachment.thumbnailUrl) && isSafeUrl(attachment.signedUrl)) {
                     return (
                     <Link
                         key={attachment.id}
@@ -48,7 +49,9 @@ export default function CommentItem({ comment, onReply, depth = 0 }: { comment: 
                     </Link>
                     );
                 }
-            
+
+                if (!isSafeUrl(attachment.signedUrl)) return null;
+
                 return(
                 <Link
                     key={index}

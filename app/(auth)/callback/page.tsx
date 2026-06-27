@@ -13,7 +13,10 @@ function OAuthCallbackHandler() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    // Token is delivered via URL fragment (#token=...) to keep it out of server logs
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
+    const token = hashParams.get('token');
     const err = searchParams.get('error');
 
     if (err) {

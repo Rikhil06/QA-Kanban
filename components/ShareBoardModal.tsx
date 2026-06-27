@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Link2, UserMinus, ChevronDown, Check, Send, Clock } from 'lucide-react';
+import { X, Link2, UserMinus, ChevronDown, Check, Send, Clock, BarChart2 } from 'lucide-react';
 import { getToken } from '@/lib/auth';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -103,6 +103,7 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [statusCopied, setStatusCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
 
   const fetchShare = async () => {
@@ -196,6 +197,13 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyStatusPageLink = () => {
+    const url = `${window.location.origin}/status/${slug}`;
+    navigator.clipboard.writeText(url);
+    setStatusCopied(true);
+    setTimeout(() => setStatusCopied(false), 2000);
   };
 
   return (
@@ -342,8 +350,30 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
           )}
         </div>
 
+        {/* Public status page */}
+        <div className="px-5 pb-4 border-t border-white/6 pt-4 mt-2">
+          <p className="text-xs font-medium text-white/30 uppercase tracking-wider mb-3">
+            Public Status Page
+          </p>
+          <div className="flex items-center gap-2 bg-white/4 border border-white/8 rounded-lg px-3 py-2.5">
+            <BarChart2 className="w-3.5 h-3.5 text-white/30 shrink-0" />
+            <p className="text-xs text-white/40 flex-1 truncate">
+              {typeof window !== 'undefined' ? `${window.location.origin}/status/${slug}` : `/status/${slug}`}
+            </p>
+            <button
+              onClick={copyStatusPageLink}
+              className="text-xs text-purple-400 hover:text-purple-300 shrink-0 transition-colors font-medium"
+            >
+              {statusCopied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <p className="text-xs text-white/25 mt-2">
+            Anyone with this link can view issue counts — no login required.
+          </p>
+        </div>
+
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/6 mt-2">
+        <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/6">
           <button
             onClick={copyLink}
             className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"

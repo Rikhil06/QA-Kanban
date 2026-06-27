@@ -5,25 +5,59 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { StatusData } from '@/types/types';
+import { useUser } from '@/context/UserContext';
 
 type Issue = {
   value: number;
   color: string;
 };
 
+function IssueStatusChartSkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+      <div className="mb-6 space-y-2">
+        <div className="h-4 w-24 rounded-md bg-white/8 animate-pulse" />
+        <div className="h-3 w-28 rounded-md bg-white/5 animate-pulse" />
+      </div>
+
+      <div className="relative flex-1 min-h-0 mb-4 flex items-center justify-center">
+        <div className="w-[140px] h-[140px] rounded-full border-[16px] border-white/8 animate-pulse" />
+      </div>
+
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-white/8 animate-pulse" />
+              <div className="h-3 w-16 rounded-md bg-white/5 animate-pulse" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-3 w-4 rounded-md bg-white/5 animate-pulse" />
+              <div className="h-3 w-8 rounded-md bg-white/5 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function IssueStatusChart() {
   const token = getToken();
+  const { user } = useUser();
+  const teamId = user?.teamId;
   const { data: issuesSummary, isLoading } = useSWR(
-    token
+    token && teamId !== undefined
       ? [
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary?teamId=${teamId ?? ''}`,
           token,
+          teamId,
         ]
       : null,
     ([url, token]) => fetcher(url, token),
   );
 
-  if (isLoading) return <p className="text-white">Loading...</p>;
+  if (isLoading) return <IssueStatusChartSkeleton />;
   if (!issuesSummary) return null;
   const total = issuesSummary.reduce(
     (sum: number, item: Issue) => sum + item.value,

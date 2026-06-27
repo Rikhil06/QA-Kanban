@@ -22,6 +22,7 @@ export interface TeamMember {
 export default function Page() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [inviteCodeOneTime, setInviteCodeOneTime] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = getToken();
@@ -55,6 +56,7 @@ export default function Page() {
 
         const data = await res.json();
         setInviteCode(data.code);
+        setInviteCodeOneTime(!!data.oneTime);
       } catch (err) {
         console.error('Failed to load invite code', err);
       }
@@ -63,18 +65,10 @@ export default function Page() {
     loadCode();
   }, []);
 
-  const handleGenerateNewCode = async () => {
+  const handleGenerateNewCode = async (oneTime: boolean) => {
     setIsSubmitting(true);
     setError(null);
     try {
-      const isValidCode = inviteCode.length > 6 && inviteCode.includes('-');
-
-      if (!isValidCode) {
-        setError('Invite link or code not found — please check and try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
         {
@@ -83,6 +77,7 @@ export default function Page() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({ oneTime }),
         },
       );
 
@@ -91,6 +86,7 @@ export default function Page() {
       if (res.ok) {
         setIsSubmitting(false);
         setInviteCode(data.code);
+        setInviteCodeOneTime(!!data.oneTime);
       } else {
         setIsSubmitting(false);
         toast.error(data.error || 'Failed to get invite code');
@@ -100,15 +96,31 @@ export default function Page() {
       setIsSubmitting(false);
     }
     setIsSubmitting(false);
-    // setInviteCode(`TEAM-${segments.join('-')}`);
   };
 
   const handleUpdateRole = (id: string, newRole: 'Admin' | 'Member') => {
     setMembers(members.map((m) => (m.id === id ? { ...m, role: newRole } : m)));
   };
 
-  const handleRemoveMember = (id: string) => {
-    setMembers(members.filter((m) => m.id !== id));
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/members/${userId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to remove member');
+        return;
+      }
+      setMembers((prev) => prev.filter((m) => m.id !== userId));
+      toast.success('Member removed from team');
+    } catch {
+      toast.error('Failed to remove member');
+    }
   };
 
   const handleResendInvite = (id: string) => {
@@ -164,7 +176,11 @@ export default function Page() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <InviteByEmail teamId={user?.teamId} />
-          <InviteCode code={inviteCode} onGenerateNew={handleGenerateNewCode} />
+          <InviteCode
+            code={inviteCode}
+            oneTime={inviteCodeOneTime}
+            onGenerateNew={handleGenerateNewCode}
+          />
         </div>
 
         <TeamMembersList

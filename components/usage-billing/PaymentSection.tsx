@@ -34,7 +34,8 @@ export function PaymentSection() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/cancel-subscription`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ teamId: user?.teamId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to cancel subscription');

@@ -7,7 +7,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 interface Subscription {
   plan: string;
   interval: string;
-  status: string; // 'active' | 'canceling' | 'canceled' | 'past_due'
+  status: string;
   trialEndsAt: string;
   currentPeriodEnd: string;
   stripePriceId: string;
@@ -21,6 +21,15 @@ interface Team {
   subscription?: Subscription;
 }
 
+export interface TeamMember {
+  role: string;
+  user: { id: string; name: string; email: string };
+}
+
+export interface TeamWithMembers extends Team {
+  members: TeamMember[];
+}
+
 interface User {
   id: string;
   name: string;
@@ -28,8 +37,10 @@ interface User {
   teamId: string;
   team: Team;
   role: string;
+  allTeams: TeamWithMembers[];
   memberships?: [];
   emailVerified: boolean;
+  lastSeenNotificationsAt?: string | null;
 }
 
 interface UserContextType {
@@ -37,6 +48,8 @@ interface UserContextType {
   loading: boolean;
   refreshUser: () => Promise<void>;
   logout: () => void;
+  switchTeam: (team: TeamWithMembers) => void;
+  setLastSeenNotificationsAt: (iso: string) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -44,6 +57,8 @@ const UserContext = createContext<UserContextType>({
   loading: true,
   refreshUser: async () => {},
   logout: () => {},
+  setLastSeenNotificationsAt: () => {},
+  switchTeam: () => {},
 });
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
@@ -59,22 +74,41 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const headers = { Authorization: `Bearer ${token}` };
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setUser(data.user);
+      const [meRes, teamsRes] = await Promise.all([
+        fetch(`${base}/api/auth/me`, { headers }),
+        fetch(`${base}/api/teams`, { headers }),
+      ]);
 
-      // Tag every future Sentry event with the logged-in user
+      if (!meRes.ok) throw new Error();
+
+      const { user: meData } = await meRes.json();
+      const allTeams: TeamWithMembers[] = teamsRes.ok ? await teamsRes.json() : [];
+
+      // Resolve active team — prefer localStorage preference if still valid
+      const savedId = typeof window !== 'undefined' ? localStorage.getItem('activeTeamId') : null;
+      const activeTeam =
+        (savedId ? allTeams.find((t) => t.id === savedId) : null) ??
+        allTeams.find((t) => t.id === meData.teamId) ??
+        allTeams[0];
+
+      const resolvedUser: User = {
+        ...meData,
+        teamId: activeTeam?.id ?? meData.teamId,
+        team: activeTeam
+          ? { id: activeTeam.id, name: activeTeam.name, plan: activeTeam.plan ?? meData.team?.plan ?? 'free', subscription: activeTeam.subscription ?? meData.team?.subscription }
+          : meData.team,
+        allTeams,
+      };
+
+      setUser(resolvedUser);
+
       Sentry.setUser({
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.name,
+        id: meData.id,
+        email: meData.email,
+        username: meData.name,
       });
     } catch {
       setUser(null);
@@ -83,11 +117,35 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const switchTeam = (team: TeamWithMembers) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeTeamId', team.id);
+    }
+    setUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            teamId: team.id,
+            team: {
+              id: team.id,
+              name: team.name,
+              plan: team.plan ?? prev.team?.plan ?? 'free',
+              subscription: team.subscription ?? prev.team?.subscription,
+            },
+          }
+        : null,
+    );
+  };
+
   const logout = () => {
     clearToken();
+    if (typeof window !== 'undefined') localStorage.removeItem('activeTeamId');
     setUser(null);
-    // Clear Sentry user so post-logout errors aren't attributed to the old session
     Sentry.setUser(null);
+  };
+
+  const setLastSeenNotificationsAt = (iso: string) => {
+    setUser((prev) => (prev ? { ...prev, lastSeenNotificationsAt: iso } : null));
   };
 
   useEffect(() => {
@@ -95,9 +153,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <UserContext.Provider
-      value={{ user, loading, refreshUser: fetchUser, logout }}
-    >
+    <UserContext.Provider value={{ user, loading, refreshUser: fetchUser, logout, switchTeam, setLastSeenNotificationsAt }}>
       {children}
     </UserContext.Provider>
   );

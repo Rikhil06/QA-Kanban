@@ -18,7 +18,8 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, ChevronLeft, Clock, FileText, GripVertical, Plus, Share2, Trash2, X } from 'lucide-react';
+import { Bug, Check, ChevronDown, ChevronLeft, Clock, FileText, GripVertical, Plus, Share2, Trash2, X } from 'lucide-react';
+import { exportToCSV, exportToPDF } from '@/utils/exportReports';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 import { toast } from 'react-toastify';
 import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
@@ -118,6 +119,7 @@ function SiteReportsContent() {
   const orderInitialized = useRef(false);
   const [isLive, setIsLive] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -517,6 +519,39 @@ function SiteReportsContent() {
         />
         {/* Right-side header controls */}
         <div className="flex items-center gap-2 mr-4">
+          {/* Export dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsExportOpen((o) => !o)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/4 text-white/50 hover:text-white/80 hover:bg-white/8 hover:border-white/15 transition-all"
+            >
+              <FileText className="w-3 h-3" />
+              Export
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {isExportOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsExportOpen(false)} />
+                <div className="absolute right-0 top-full mt-1.5 z-20 w-36 rounded-lg border border-white/10 bg-[#1C1C1C] shadow-xl overflow-hidden">
+                  <button
+                    onClick={() => { exportToCSV(filteredReports, slug); setIsExportOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-white/60 hover:text-white/90 hover:bg-white/6 transition-colors text-left"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(filteredReports, slug); setIsExportOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-white/60 hover:text-white/90 hover:bg-white/6 transition-colors text-left"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Export as PDF
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Share button */}
           <button
             onClick={() => setIsShareOpen(true)}

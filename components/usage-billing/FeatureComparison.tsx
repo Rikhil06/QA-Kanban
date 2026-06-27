@@ -7,7 +7,7 @@ export function FeatureComparison() {
       category: 'Core Features',
       items: [
         { name: 'Projects', free: '3', starter: '5', team: 'Unlimited', agency: 'Custom' },
-        { name: 'Screenshots/month', free: '25', starter: '300', team: 'Unlimited', agency: 'Custom' },
+        { name: 'Screenshots/month', free: '100', starter: '300', team: 'Unlimited', agency: 'Custom' },
         { name: 'Team members', free: '5', starter: '10', team: 'Unlimited', agency: 'Custom' },
         { name: 'History retention', free: '7 days', starter: '90 days', team: 'Unlimited', agency: 'Custom' }
       ]

@@ -16,6 +16,7 @@ import { AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useUser } from '@/context/UserContext';
 
 export default function Page() {
   return (
@@ -27,6 +28,8 @@ export default function Page() {
 
 function MyTasksContent() {
   const token = getToken();
+  const { user } = useUser();
+  const teamId = user?.teamId;
   const router = useRouter();
   const params = useSearchParams();
 
@@ -60,21 +63,23 @@ function MyTasksContent() {
   const { data: issuesSummary = [], isLoading: issuesLoading } = useQuery<
     StatusData[]
   >({
-    queryKey: ['issues-summary'],
+    queryKey: ['issues-summary', teamId],
     queryFn: () =>
       fetcher(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary?teamId=${teamId ?? ''}`,
         token,
       ),
     staleTime: STALE.STATS,
+    enabled: !!token && teamId !== undefined,
   });
 
   // --- React Query: Tasks ---
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', teamId],
     queryFn: () =>
-      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks`, token),
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks?teamId=${teamId ?? ''}`, token),
     staleTime: STALE.DEFAULT,
+    enabled: !!token && teamId !== undefined,
   });
 
   const total = issuesSummary.reduce(

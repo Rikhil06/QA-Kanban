@@ -46,9 +46,19 @@ function RegisterContent() {
   const { refreshUser } = useUser();
 
   useEffect(() => {
-    if (getToken()) router.replace(redirectTo ?? '/');
-    if (typeof window !== 'undefined') {
-      setInviteCode(localStorage.getItem('invite_code'));
+    // Read invite_code from URL param first, fall back to sessionStorage
+    const codeFromUrl = searchParams.get('invite_code');
+    const codeFromStorage = typeof window !== 'undefined' ? sessionStorage.getItem('invite_code') : null;
+    const code = codeFromUrl ?? codeFromStorage;
+    if (code) setInviteCode(code);
+
+    // If already logged in, send to invite flow or home
+    if (getToken()) {
+      if (code) router.replace(`/invite/${code}`);
+      else {
+        const safePath = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+        router.replace(safePath);
+      }
     }
   }, []);
 
@@ -102,7 +112,8 @@ function RegisterContent() {
       await refreshUser();
 
       if (redirectTo) {
-        router.push(redirectTo);
+        const safePath = redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+        router.push(safePath);
       } else if (inviteCode) {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`, {
           method: 'POST',
@@ -112,7 +123,7 @@ function RegisterContent() {
           },
           body: JSON.stringify({ code: inviteCode }),
         });
-        localStorage.removeItem('invite_code');
+        sessionStorage.removeItem('invite_code');
         router.push('/');
       } else {
         router.push('/onboarding/team');
@@ -125,7 +136,7 @@ function RegisterContent() {
     }
   };
 
-  const features = ['1 project', '25 screenshots / month', 'Cancel anytime'];
+  const features = ['1 project', '100 screenshots / month', 'Cancel anytime'];
 
   return (
     <>

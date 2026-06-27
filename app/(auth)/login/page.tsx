@@ -26,7 +26,10 @@ function LoginContent() {
 
   // Redirect already-authenticated users away from the login page
   useEffect(() => {
-    if (getToken()) router.replace(redirectTo ?? '/');
+    if (getToken()) {
+      const safePath = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+      router.replace(safePath);
+    }
   }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +51,13 @@ function LoginContent() {
     if (res.ok) {
       setToken(data.token);
       await refreshUser();
-      router.push(redirectTo ?? '/');
+      const pendingInvite = typeof window !== 'undefined' ? sessionStorage.getItem('invite_code') : null;
+      if (pendingInvite) {
+        router.push(`/invite/${pendingInvite}`);
+      } else {
+        const safePath = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+        router.push(safePath);
+      }
       setIsLoading(false);
     } else {
       setError(data.error || 'Login failed');

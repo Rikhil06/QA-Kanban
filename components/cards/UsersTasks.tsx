@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { Task } from '@/types/types';
 import Link from 'next/link';
+import { useUser } from '@/context/UserContext';
 
 const priorityConfig = {
   urgent: { color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
@@ -41,12 +42,45 @@ const statusConfig = {
   },
 } as const;
 
+function UsersTasksSkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <div className="h-4 w-24 rounded-md bg-white/8 animate-pulse" />
+          <div className="h-3 w-36 rounded-md bg-white/5 animate-pulse" />
+        </div>
+        <div className="h-3 w-12 rounded-md bg-white/5 animate-pulse" />
+      </div>
+      <div className="flex-1 space-y-3">
+        {[72, 56, 64, 48].map((w, i) => (
+          <div key={i} className="bg-white/3 border border-white/5 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 w-4 h-4 rounded-full bg-white/8 animate-pulse shrink-0" />
+              <div className="flex-1 space-y-2.5">
+                <div className={`h-3 w-${w} rounded-md bg-white/8 animate-pulse`} />
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-16 rounded-full bg-white/5 animate-pulse" />
+                  <div className="h-4 w-14 rounded-full bg-white/5 animate-pulse" />
+                  <div className="h-3 w-12 rounded-md bg-white/5 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function UsersTasks() {
   const token = getToken();
+  const { user } = useUser();
+  const teamId = user?.teamId;
 
   const { data: tasks, isLoading, error } = useSWR(
-    token
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks`, token]
+    token && teamId !== undefined
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks?teamId=${teamId ?? ''}`, token, teamId]
       : null,
     ([url, token]) => fetcher(url, token),
   );
@@ -71,7 +105,7 @@ export function UsersTasks() {
     return 'Custom';
   }
 
-  if (isLoading) return <p className="text-white">Loading...</p>;
+  if (isLoading) return <UsersTasksSkeleton />;
   if (error || !tasks) return (
     <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl items-center justify-center">
       <p className="text-sm text-gray-400">Failed to load tasks. Please refresh.</p>

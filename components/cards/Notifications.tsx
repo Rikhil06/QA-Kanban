@@ -71,6 +71,17 @@ function UserPlusIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function UserCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <polyline points="16 11 18 13 22 9" />
+    </svg>
+  );
+}
 
 // ── Lookup helpers ─────────────────────────────────────────────────────────
 type IconComponent = (props: { className?: string }) => React.ReactElement;
@@ -80,19 +91,50 @@ const ICON_MAP: Record<string, IconComponent> = {
   TASK_DUE_TODAY: ClockIcon,
   MENTION:        AtSignIcon,
   SITE_INVITE:    UserPlusIcon,
+  TASK_ASSIGNED:  UserCheckIcon,
 };
 const BG_MAP: Record<string, string> = {
   TASK_OVERDUE:   'bg-red-500/10',
   TASK_DUE_TODAY: 'bg-orange-500/10',
   MENTION:        'bg-purple-500/10',
   SITE_INVITE:    'bg-blue-500/10',
+  TASK_ASSIGNED:  'bg-emerald-500/10',
 };
 const COLOR_MAP: Record<string, string> = {
   TASK_OVERDUE:   'text-red-400',
   TASK_DUE_TODAY: 'text-orange-400',
   MENTION:        'text-purple-400',
   SITE_INVITE:    'text-blue-400',
+  TASK_ASSIGNED:  'text-emerald-400',
 };
+
+function NotificationsSkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-white/8 animate-pulse" />
+          <div className="h-4 w-28 rounded-md bg-white/8 animate-pulse" />
+        </div>
+        <div className="h-5 w-14 rounded-full bg-white/5 animate-pulse" />
+      </div>
+      <div className="flex-1 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white/3 border border-white/5 rounded-lg p-3">
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/8 animate-pulse shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-3/4 rounded-md bg-white/8 animate-pulse" />
+                <div className="h-3 w-1/2 rounded-md bg-white/5 animate-pulse" />
+                <div className="h-2.5 w-16 rounded-md bg-white/5 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Component ──────────────────────────────────────────────────────────────
 export function Notifications() {
@@ -103,7 +145,7 @@ export function Notifications() {
       ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token]
       : null,
     ([url, t]: [string, string]) => fetcher(url, t),
-    { refreshInterval: 10000 },
+    { refreshInterval: 60000 },
   );
 
   async function handleNotificationClick(id: string) {
@@ -113,7 +155,7 @@ export function Notifications() {
     );
   }
 
-  if (isLoading) return <div className="h-full rounded-xl border border-white/10 bg-[#1A1A1A] animate-pulse" />;
+  if (isLoading) return <NotificationsSkeleton />;
   if (error)     return <div className="h-full rounded-xl border border-white/10 bg-[#1A1A1A] flex items-center justify-center text-sm text-white/30">Failed to load</div>;
 
   const notifs: Notification[] = Array.isArray(data?.notifications) ? data.notifications : [];

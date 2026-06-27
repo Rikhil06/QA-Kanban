@@ -10,18 +10,51 @@ import Image from 'next/image';
 import Link from 'next/link';
 import slugify from 'slugify';
 import { stripTLD } from '@/utils/stripTLD';
+import { useUser } from '@/context/UserContext';
 
+function MySitesSkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <div className="h-4 w-20 rounded-md bg-white/8 animate-pulse" />
+          <div className="h-3 w-28 rounded-md bg-white/5 animate-pulse" />
+        </div>
+        <div className="h-3 w-12 rounded-md bg-white/5 animate-pulse" />
+      </div>
+      <div className="flex-1 flex flex-col gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white/3 border border-white/5 rounded-lg p-4">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-white/8 animate-pulse shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-3/4 rounded-md bg-white/8 animate-pulse" />
+                <div className="h-2.5 w-20 rounded-md bg-white/5 animate-pulse" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+              <div className="h-3 w-16 rounded-md bg-white/5 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function MySites() {
   const token = getToken();
+  const { user } = useUser();
+  const teamId = user?.teamId;
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    if (!teamId) return;
     const getSites = async () => {
       try {
-        const data = await fetchSites(token);
+        const data = await fetchSites(token, teamId);
         setSites(data);
       } catch {
         setHasError(true);
@@ -31,7 +64,10 @@ export function MySites() {
     };
 
     getSites();
-  }, []);
+  }, [teamId]);
+
+  if (loading) return <MySitesSkeleton />;
+
   return (
     <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">

@@ -19,7 +19,7 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
       features: [
         '3 projects / boards',
         '5 team members',
-        '25 screenshots per month',
+        '100 screenshots per month',
         'Basic annotations & comments',
         '7-day retention',
       ],
@@ -30,7 +30,7 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
       name: 'Starter',
       tag: 'Best for freelancers',
       color: 'from-blue-500 to-cyan-500',
-      monthlyPrice: 12,
+      monthlyPrice: 15,
       yearlyPrice: 144,
       features: [
         '5 projects / boards',
@@ -112,7 +112,8 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+    <div className="mb-16">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {plans.map((plan) => {
         const isCurrentPlan = user?.team.plan === plan.id;
         const price = getPrice(plan);
@@ -203,6 +204,18 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
           </div>
         );
       })}
+    </div>
+    <p className="text-xs text-white/30 text-center mt-4">
+      By upgrading you agree to our{' '}
+      <a href="https://annoture.com/terms" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white/70 underline underline-offset-2 transition-colors">
+        Terms of Service
+      </a>{' '}
+      and{' '}
+      <a href="https://annoture.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white/70 underline underline-offset-2 transition-colors">
+        Privacy Policy
+      </a>
+      , including our cancellation and refund terms.
+    </p>
     </div>
   );
 }

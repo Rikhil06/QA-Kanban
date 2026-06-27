@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link2, Copy, RotateCw, Check } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface InviteCodeProps {
   code: string;
-  onGenerateNew: () => void;
+  oneTime: boolean;
+  onGenerateNew: (oneTime: boolean) => void;
 }
 
-export function InviteCode({ code, onGenerateNew }: InviteCodeProps) {
+export function InviteCode({ code, oneTime, onGenerateNew }: InviteCodeProps) {
   const [copied, setCopied] = useState(false);
-  const [isOneTime, setIsOneTime] = useState(false);
+  const [isOneTime, setIsOneTime] = useState(oneTime);
+
+  useEffect(() => {
+    setIsOneTime(oneTime);
+  }, [oneTime]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -19,8 +24,7 @@ export function InviteCode({ code, onGenerateNew }: InviteCodeProps) {
   };
 
   const handleGenerate = () => {
-    onGenerateNew();
-    // toast.success('New invite code generated');
+    onGenerateNew(isOneTime);
   };
 
   return (

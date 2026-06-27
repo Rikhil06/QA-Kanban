@@ -21,6 +21,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "js-cookie": "^3.0.5",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.560.0",
     "motion": "^12.23.25",

@@ -7,7 +7,7 @@ import { Capitalize, timeAgo } from '@/utils/helpers';
 interface TeamMembersListProps {
   members: TeamMember[];
   onUpdateRole: (id: string, role: 'Admin' | 'Member') => void;
-  onRemoveMember: (id: string) => void;
+  onRemoveMember: (id: string) => void | Promise<void>;
   onResendInvite: (id: string) => void;
 }
 
@@ -28,7 +28,6 @@ export function TeamMembersList({
 
   const handleRemove = (member: TeamMember) => {
     onRemoveMember(member.id);
-    toast.success(`${member.name} removed from team`);
     setOpenMenuId(null);
   };
 
@@ -54,7 +53,7 @@ export function TeamMembersList({
   };
 
   return (
-    <div className="mt-8 bg-[#1C1C1C] border border-white/5 rounded-2xl overflow-hidden">
+    <div className="mt-8 bg-[#1C1C1C] border border-white/5 rounded-2xl">
       <div className="p-6 border-b border-white/5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
@@ -74,7 +73,7 @@ export function TeamMembersList({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div>
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5 text-left">

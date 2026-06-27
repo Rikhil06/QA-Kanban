@@ -35,6 +35,8 @@ export type Report = {
     screenSize?: string;
     viewport?: string;
     cssPath?: string;
+    consoleLogs?: { level: 'error' | 'warn'; message: string; timestamp: string }[];
+    videoPath?: string;
 };
 
 export type Comment = {

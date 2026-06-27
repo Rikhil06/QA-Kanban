@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { getToken } from '@/lib/auth';
 import { clearToken } from '@/lib/auth';
@@ -16,7 +16,15 @@ import {
   EyeOff,
   Settings,
   Check,
+  Monitor,
 } from 'lucide-react';
+import {
+  isDesktopNotificationsEnabled,
+  isDesktopNotificationsSupported,
+  getBrowserPermission,
+  enableDesktopNotifications,
+  disableDesktopNotifications,
+} from '@/lib/desktopNotifications';
 
 type Section = 'profile' | 'security' | 'notifications' | 'danger';
 
@@ -47,6 +55,42 @@ export default function SettingsPage() {
   const [notifDueToday, setNotifDueToday] = useState(true);
   const [notifTeamInvite, setNotifTeamInvite] = useState(true);
   const [notifLoading, setNotifLoading] = useState(false);
+
+  // ── Desktop notifications (browser permission, not a server pref) ──
+  const [desktopEnabled, setDesktopEnabled] = useState(false);
+  const [desktopPermission, setDesktopPermission] = useState<NotificationPermission | null>(null);
+
+  useEffect(() => {
+    setDesktopEnabled(isDesktopNotificationsEnabled());
+    setDesktopPermission(getBrowserPermission());
+  }, []);
+
+  const handleToggleDesktopNotifications = async (next: boolean) => {
+    if (!next) {
+      disableDesktopNotifications();
+      setDesktopEnabled(false);
+      return;
+    }
+    const result = await enableDesktopNotifications();
+    setDesktopPermission(result.permission);
+    setDesktopEnabled(result.success);
+    if (!result.success) {
+      toast.error(
+        result.permission === 'denied'
+          ? 'Notifications are blocked for this site — enable them in your browser settings.'
+          : 'Could not enable desktop notifications.',
+      );
+    }
+  };
+
+  useEffect(() => {
+    const prefs = (user as any)?.notificationPrefs;
+    if (!prefs) return;
+    if (prefs.taskAssigned !== undefined) setNotifTaskAssigned(prefs.taskAssigned);
+    if (prefs.taskOverdue !== undefined) setNotifTaskOverdue(prefs.taskOverdue);
+    if (prefs.dueToday !== undefined) setNotifDueToday(prefs.dueToday);
+    if (prefs.teamInvite !== undefined) setNotifTeamInvite(prefs.teamInvite);
+  }, [user]);
 
   // ── Danger zone ───────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -369,6 +413,38 @@ export default function SettingsPage() {
                   Choose which in-app notifications you receive.
                 </p>
 
+                {isDesktopNotificationsSupported() && (
+                  <div className="flex items-start justify-between gap-4 py-3 mb-2 border-b border-white/5">
+                    <div className="flex items-start gap-3">
+                      <Monitor className="w-4 h-4 text-white/40 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-white/80 text-sm">Desktop notifications</p>
+                        <p className="text-white/40 text-xs mt-0.5">
+                          {desktopPermission === 'denied'
+                            ? 'Blocked by your browser — enable in site settings to use this.'
+                            : 'Get a native notification on this device while the tab is open.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={desktopEnabled}
+                      disabled={desktopPermission === 'denied'}
+                      onClick={() => handleToggleDesktopNotifications(!desktopEnabled)}
+                      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed ${
+                        desktopEnabled ? 'bg-purple-600' : 'bg-white/15'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                          desktopEnabled ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
                 <form onSubmit={handleUpdateNotifications} className="space-y-4">
                   {[
                     {
@@ -406,14 +482,16 @@ export default function SettingsPage() {
                       </div>
                       <button
                         type="button"
+                        role="switch"
+                        aria-checked={value}
                         onClick={() => onChange(!value)}
-                        className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
-                          value ? 'bg-purple-600' : 'bg-white/10'
+                        className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none overflow-hidden ${
+                          value ? 'bg-purple-600' : 'bg-white/15'
                         }`}
                       >
                         <span
-                          className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                            value ? 'translate-x-5' : 'translate-x-1'
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                            value ? 'translate-x-5' : 'translate-x-0'
                           }`}
                         />
                       </button>

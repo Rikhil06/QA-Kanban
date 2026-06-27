@@ -56,8 +56,18 @@ export default function UpgradeButton(props: UpgradeButtonProps) {
 
       // ⭐ handle both cases
       if (data.url) {
-        // New subscription → redirect to Stripe Checkout
-        window.location.href = data.url;
+        // New subscription → redirect to Stripe Checkout (validate hostname first)
+        try {
+          const url = new URL(data.url);
+          if (url.hostname === 'checkout.stripe.com' || url.hostname === 'billing.stripe.com') {
+            window.location.href = data.url;
+          } else {
+            throw new Error('Unexpected redirect hostname');
+          }
+        } catch {
+          console.error('Invalid redirect URL');
+          alert('Something went wrong. Please try again.');
+        }
         setLoading(false);
       } else if (data.status === 'updated') {
         // Existing subscription updated → show success toast or reload page

@@ -11,6 +11,7 @@ import {
   Clock,
   AtSign,
   UserPlus,
+  UserCheck,
   CheckCheck,
   ExternalLink,
 } from 'lucide-react';
@@ -32,27 +33,31 @@ const iconMap: Record<string, any> = {
   TASK_DUE_TODAY: Clock,
   MENTION:        AtSign,
   SITE_INVITE:    UserPlus,
+  TASK_ASSIGNED:  UserCheck,
 };
 const iconBgMap: Record<string, string> = {
   TASK_OVERDUE:   'bg-red-500/10',
   TASK_DUE_TODAY: 'bg-amber-500/10',
   MENTION:        'bg-purple-500/10',
   SITE_INVITE:    'bg-blue-500/10',
+  TASK_ASSIGNED:  'bg-emerald-500/10',
 };
 const iconColorMap: Record<string, string> = {
   TASK_OVERDUE:   'text-red-400',
   TASK_DUE_TODAY: 'text-amber-400',
   MENTION:        'text-purple-400',
   SITE_INVITE:    'text-blue-400',
+  TASK_ASSIGNED:  'text-emerald-400',
 };
 const typeLabelMap: Record<string, string> = {
   TASK_OVERDUE:   'Overdue',
   TASK_DUE_TODAY: 'Due today',
   MENTION:        'Mention',
   SITE_INVITE:    'Invite',
+  TASK_ASSIGNED:  'Assigned',
 };
 
-type Filter = 'all' | 'unread' | 'MENTION' | 'TASK_OVERDUE' | 'TASK_DUE_TODAY' | 'SITE_INVITE';
+type Filter = 'all' | 'unread' | 'MENTION' | 'TASK_OVERDUE' | 'TASK_DUE_TODAY' | 'SITE_INVITE' | 'TASK_ASSIGNED';
 
 export default function NotificationsPage() {
   const token = getToken();
@@ -96,6 +101,7 @@ export default function NotificationsPage() {
     { label: 'All', value: 'all' },
     { label: 'Unread', value: 'unread' },
     { label: 'Mentions', value: 'MENTION' },
+    { label: 'Assigned', value: 'TASK_ASSIGNED' },
     { label: 'Overdue', value: 'TASK_OVERDUE' },
     { label: 'Due today', value: 'TASK_DUE_TODAY' },
     { label: 'Invites', value: 'SITE_INVITE' },

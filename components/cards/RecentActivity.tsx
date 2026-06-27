@@ -11,7 +11,7 @@ import { getToken } from '@/lib/auth';
 import Link from 'next/link';
 import { Capitalize } from '@/utils/helpers';
 import { Activity } from '@/types/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/context/UserContext';
 
 const iconMap: Record<string, any> = {
   comment: MessageSquare,
@@ -21,22 +21,51 @@ const iconMap: Record<string, any> = {
   created: AlertCircle,
 };
 
+function RecentActivitySkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-linear-to-br from-[#1A1A1A] to-[#161616] rounded-xl border border-white/10 p-6 shadow-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <div className="h-4 w-32 rounded-md bg-white/8 animate-pulse" />
+          <div className="h-3 w-44 rounded-md bg-white/5 animate-pulse" />
+        </div>
+        <div className="h-3 w-14 rounded-md bg-white/5 animate-pulse" />
+      </div>
+      <div className="flex-1 space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex gap-4">
+            <div className="w-8 h-8 rounded-full bg-white/8 animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2.5 pb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-white/8 animate-pulse shrink-0" />
+                <div className="h-3 w-3/5 rounded-md bg-white/8 animate-pulse" />
+              </div>
+              <div className="h-2.5 w-16 rounded-md bg-white/5 animate-pulse ml-9" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function RecentActivity() {
   const token = getToken();
+  const { user } = useUser();
+  const teamId = user?.teamId;
   const {
     data: activities,
     error,
     isLoading,
   } = useSWR(
-    token
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities`, token]
+    token && teamId !== undefined
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities?teamId=${teamId ?? ''}`, token, teamId]
       : null,
     ([url, token]) => fetcher(url, token),
-    { refreshInterval: 10000 },
+    { refreshInterval: 60000 },
   );
 
-  if (isLoading)
-    return <Skeleton className="h-[20px] w-[100px] rounded-full" />;
+  if (isLoading) return <RecentActivitySkeleton />;
   if (error) return <div>Failed to load activities</div>;
 
   return (

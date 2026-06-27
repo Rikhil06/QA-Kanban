@@ -1,10 +1,10 @@
 // lib/fetchSites.ts
 
-export async function fetchSites(token: string | undefined) {
+export async function fetchSites(token: string | undefined, teamId?: string) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/sites`,
-      {
+    const url = new URL(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/sites`);
+    if (teamId) url.searchParams.set('teamId', teamId);
+    const res = await fetch(url.toString(), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
