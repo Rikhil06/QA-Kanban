@@ -9,9 +9,51 @@ import { fetchSites } from '@/lib/fetchSites';
 import { Site } from '@/types/types';
 import { stripTLD } from '@/utils/stripTLD';
 import { useEffect, useState } from 'react';
-import slugify from 'slugify';
-import { AnnotureLoader } from '@/components/AnnotureLoader';
 import { toast } from 'react-toastify';
+
+function SiteCardSkeleton() {
+  return (
+    <div className="relative bg-[#1C1C1C] border border-white/8 rounded-xl p-5 animate-pulse">
+      {/* colour bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-white/8" />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="h-4 w-2/3 rounded bg-white/10" />
+          <div className="h-3 w-1/2 rounded bg-white/6" />
+        </div>
+        <div className="w-6 h-6 rounded-lg bg-white/6 ml-3 shrink-0" />
+      </div>
+
+      {/* Badge */}
+      <div className="mb-4">
+        <div className="h-6 w-14 rounded-md bg-white/6" />
+      </div>
+
+      {/* Stats */}
+      <div className="mb-4 space-y-2">
+        <div className="flex justify-between">
+          <div className="h-3.5 w-20 rounded bg-white/6" />
+          <div className="h-3.5 w-6 rounded bg-white/10" />
+        </div>
+      </div>
+
+      {/* Avatars */}
+      <div className="mb-4 flex items-center gap-1">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="w-7 h-7 rounded-full bg-white/8" />
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="pt-4 border-t border-white/6 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
+        <div className="h-3 w-16 rounded bg-white/6" />
+      </div>
+    </div>
+  );
+}
 
 export default function SitesPage() {
   const { user } = useUser();
@@ -208,7 +250,13 @@ export default function SitesPage() {
   };
 
   if (loading)
-    return <AnnotureLoader className="h-[calc(100vh-64px)]" size="lg" />;
+    return (
+      <div className="max-w-11/12 mx-auto mt-12 md:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => <SiteCardSkeleton key={i} />)}
+        </div>
+      </div>
+    );
 
   return (
     <div className="max-w-11/12 mx-auto mt-12 md:mb-12">
