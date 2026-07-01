@@ -274,6 +274,28 @@ export default function SitesPage() {
           />
 
           <div className="space-y-8">
+            {filteredSites.length === 0 && sites.length > 0 && (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-white/60 mb-1">No sites match your filters</p>
+                <p className="text-xs text-white/30 mb-5">Try adjusting your search or filter criteria</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                    setEnvironmentFilter('all');
+                  }}
+                  className="text-xs px-3.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/4 transition-all"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+
             {pinnedSites.length > 0 && (
               <div>
                 <div className="flex items-center mb-4">
