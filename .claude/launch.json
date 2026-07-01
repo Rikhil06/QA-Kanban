@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "annoture-screenshots",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "7722", "--directory", "/private/tmp/annoture-screenshots"],
+      "port": 7722
+    }
+  ]
+}
