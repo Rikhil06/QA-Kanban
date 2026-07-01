@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 import { ReactQueryProvider } from "./providers/ReactQueryProvider";
+import { Analytics } from '@vercel/analytics/next';
 
 const APP_URL = "https://app.annoture.com";
 const OG_TITLE = "Annoture - Visual QA & Bug Reporting for Teams";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ReactQueryProvider>
           {children}
         </ReactQueryProvider>
+        <Analytics />
       </body>
     </html>
   );
