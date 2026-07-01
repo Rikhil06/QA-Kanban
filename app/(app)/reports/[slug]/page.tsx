@@ -137,7 +137,7 @@ function SiteReportsContent() {
   });
 
   // -------------------- Fetch Reports + Comments --------------------
-  const { data, error: reportsError } = useQuery<{
+  const { data, error: reportsError, isLoading: reportsLoading } = useQuery<{
     reports: Report[];
     comments: Record<string, Comment[]>;
   }>({
@@ -495,6 +495,70 @@ function SiteReportsContent() {
     });
     setSelectedId(null);
   };
+
+  if (reportsLoading) return (
+    <>
+      {/* Filter bar placeholder */}
+      <div className="flex items-center justify-between border-b border-white/8 h-12 px-4">
+        <div className="flex items-center gap-2">
+          {[80, 64, 72, 56].map((w, i) => (
+            <div key={i} className={`h-6 rounded-full bg-white/6 animate-pulse`} style={{ width: w }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Skeleton columns */}
+      <div className="flex h-[calc(100vh-8.5rem)] overflow-x-auto">
+        <div className="flex gap-4 px-6 py-6">
+          {['New', 'In Progress', 'Done'].map((name, ci) => (
+            <div key={ci} className="flex flex-col min-w-[320px] max-w-[320px] rounded-xl border border-white/6 bg-[#1C1C1C]/40 overflow-hidden">
+              {/* Column header */}
+              <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-3.5 w-3.5 rounded bg-white/8 animate-pulse" />
+                  <div className="h-3.5 rounded bg-white/10 animate-pulse" style={{ width: name.length * 7 }} />
+                  <div className="h-5 w-5 rounded-full bg-white/8 animate-pulse" />
+                </div>
+                <div className="h-5 w-5 rounded-md bg-white/6 animate-pulse" />
+              </div>
+
+              {/* Skeleton cards */}
+              <div className="flex-1 space-y-2 p-3">
+                {[...Array(ci === 0 ? 3 : ci === 1 ? 1 : 2)].map((_, i) => (
+                  <div key={i} className="rounded-lg border border-white/8 bg-[#222] p-3.5 animate-pulse">
+                    {/* Top row: icon + priority dot + type badge */}
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3.5 w-3.5 rounded bg-white/10" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                      </div>
+                      <div className="h-4 w-10 rounded bg-white/8" />
+                    </div>
+                    {/* Title */}
+                    <div className="mb-1.5 h-4 rounded bg-white/10" style={{ width: `${70 + (i * 13) % 25}%` }} />
+                    {i % 2 === 0 && <div className="mb-3 h-3 w-3/4 rounded bg-white/6" />}
+                    {/* Page path */}
+                    <div className="mb-3 flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded bg-white/8" />
+                      <div className="h-3 w-20 rounded bg-white/6" />
+                    </div>
+                    {/* Footer */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-3 w-3 rounded bg-white/8" />
+                        <div className="h-3 w-16 rounded bg-white/6" />
+                      </div>
+                      <div className="h-6 w-6 rounded-full bg-white/10" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <>
