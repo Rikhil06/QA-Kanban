@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getToken } from '@/lib/auth';
 import { toast, ToastContainer } from 'react-toastify';
 import { useUser } from '@/context/UserContext';
 
@@ -19,8 +18,7 @@ type UpgradeButtonProps = {
 
 export default function UpgradeButton(props: UpgradeButtonProps) {
   const [loading, setLoading] = useState(false);
-  const token = getToken();
-  const { refreshUser } = useUser();
+  const { user, refreshUser } = useUser();
   const {
     onClick,
     teamId,
@@ -30,6 +28,19 @@ export default function UpgradeButton(props: UpgradeButtonProps) {
     className,
     disabled,
   } = props;
+
+  const isOwner = user?.role === 'owner';
+  if (!isOwner) {
+    return (
+      <button
+        disabled
+        title="Only the team owner can change the plan"
+        className={`${className} opacity-40 cursor-not-allowed`}
+      >
+        {`${PLAN_ORDER.indexOf(planName) > PLAN_ORDER.indexOf(currentPlan) ? 'Upgrade' : 'Downgrade'} to ${planName}`}
+      </button>
+    );
+  }
 
   const currentIndex = PLAN_ORDER.indexOf(currentPlan);
   const targetIndex = PLAN_ORDER.indexOf(planName);
@@ -44,10 +55,8 @@ export default function UpgradeButton(props: UpgradeButtonProps) {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/checkout`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ teamId, priceId }),
         },
       );

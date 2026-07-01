@@ -142,16 +142,16 @@ export function Notifications() {
 
   const { data, error, isLoading } = useSWR(
     token
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token]
+      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`
       : null,
-    ([url, t]: [string, string]) => fetcher(url, t),
+    fetcher,
     { refreshInterval: 60000 },
   );
 
   async function handleNotificationClick(id: string) {
     await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/${id}/read`,
-      { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } },
+      { method: 'PATCH', credentials: 'include' },
     );
   }
 

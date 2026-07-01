@@ -1,23 +1,17 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { RiProgress6Line } from 'react-icons/ri';
 
 export default function InProgressCard() {
   const [inProgressIssues, setInProgressIssues] = useState<number | null>(null);
-  const token = getToken();
 
   useEffect(() => {
     const fetchOpenIssues = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/in-progress`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
+          { credentials: 'include' },
         );
         const data = await res.json();
         setInProgressIssues(data.inProgressIssues);

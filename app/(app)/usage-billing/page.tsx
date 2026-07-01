@@ -8,7 +8,6 @@ import { FeatureComparison } from '@/components/usage-billing/FeatureComparison'
 import { UsagePanel } from '@/components/usage-billing/UsagePanel';
 import { PaymentSection } from '@/components/usage-billing/PaymentSection';
 import { TrustBadges } from '@/components/usage-billing/TrustBadges';
-import { getToken } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'react-toastify';
 
@@ -24,7 +23,6 @@ function UsageBillingContent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const params = useSearchParams();
   const router = useRouter();
-  const token = getToken();
   const { refreshUser } = useUser();
   const verified = useRef(false);
 
@@ -37,7 +35,7 @@ function UsageBillingContent() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/verify-session?sessionId=${sessionId}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          { credentials: 'include' },
         );
         const data = await res.json();
         if (res.ok) {

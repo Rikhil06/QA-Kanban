@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import debounce from 'lodash.debounce';
 import { Search } from 'lucide-react';
-import { getToken } from '@/lib/auth';
-
 export default function SearchBar() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState({
@@ -13,7 +11,6 @@ export default function SearchBar() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = getToken();
 
   const search = async (q: string) => {
     if (!q) {
@@ -29,10 +26,8 @@ export default function SearchBar() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/search?q=${encodeURIComponent(q)}`,
         {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
         },
       );
 

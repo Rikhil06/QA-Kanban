@@ -11,7 +11,6 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/app/providers/ReactQueryProvider';
 import { Report, ColumnId, Filters, User, Comment } from '@/types/types';
-import { getToken } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
 import { FilterBar } from '@/components/filter/ReportsFilter';
 import ReportModal from '@/components/ReportModal';
@@ -46,7 +45,6 @@ function SiteReportsContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const token = getToken();
   const slug = params?.slug as string;
   const { user } = useUser();
   const reportIdFromUrl = searchParams.get('report');
@@ -127,7 +125,6 @@ function SiteReportsContent() {
   useRealtimeBoard({
     slug,
     teamId: user?.teamId,
-    token: token ?? undefined,
     onConnected: () => setIsLive(true),
     onDisconnected: () => setIsLive(false),
   });
@@ -148,9 +145,7 @@ function SiteReportsContent() {
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}?teamId=${user?.teamId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { credentials: 'include' },
       );
       if (res.status === 404 || res.status === 403) {
         const err = new Error('NOT_FOUND') as Error & { status: number };
@@ -164,7 +159,7 @@ function SiteReportsContent() {
         reports.map(async (report) => {
           const res = await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${report.id}/comments`,
-            { headers: { Authorization: `Bearer ${token}` } },
+            { credentials: 'include' },
           );
           commentsMap[report.id] = await res.json();
         }),
@@ -187,7 +182,7 @@ function SiteReportsContent() {
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns?teamId=${user?.teamId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { credentials: 'include' },
       );
       if (!res.ok) return [];
       return res.json();
@@ -201,7 +196,7 @@ function SiteReportsContent() {
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/order?teamId=${user?.teamId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { credentials: 'include' },
       );
       if (!res.ok) return null;
       const data = await res.json();
@@ -246,10 +241,8 @@ function SiteReportsContent() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/reorder`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ order, teamId: user?.teamId }),
         },
       );
@@ -263,10 +256,8 @@ function SiteReportsContent() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name, teamId: user?.teamId }),
         },
       );
@@ -301,7 +292,7 @@ function SiteReportsContent() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns/${columnId}?teamId=${user?.teamId}`,
         {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         },
       );
       if (!res.ok) throw new Error('Failed to delete column');
@@ -329,7 +320,7 @@ function SiteReportsContent() {
     }: {
       reportId: string;
       newStatus: string;
-    }) => updateStatus(token, reportId, newStatus),
+    }) => updateStatus(reportId, newStatus),
     onMutate: async ({ reportId, newStatus }) => {
       await queryClient.cancelQueries({
         queryKey: ['reports', slug, user?.teamId],

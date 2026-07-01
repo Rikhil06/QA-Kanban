@@ -2,12 +2,23 @@
 
 import { CreateTeamCard } from '@/components/cards/CreateTeamCard';
 import { JoinTeamCard } from '@/components/cards/JoinTeamCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '@/hooks/useUser';
+import { useRouter } from 'next/navigation';
 
 type SelectedOption = 'create' | 'join' | null;
 
 export default function Page() {
   const [selectedOption, setSelectedOption] = useState<SelectedOption>(null);
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  // If user already has a team, they've completed onboarding — send to dashboard
+  useEffect(() => {
+    if (!loading && user?.teamId) {
+      router.replace('/');
+    }
+  }, [user, loading, router]);
 
   const handleReset = () => setSelectedOption(null);
 

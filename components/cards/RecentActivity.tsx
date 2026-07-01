@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
-import { getToken } from '@/lib/auth';
 import Link from 'next/link';
 import { Capitalize } from '@/utils/helpers';
 import { Activity } from '@/types/types';
@@ -50,7 +49,6 @@ function RecentActivitySkeleton() {
 }
 
 export function RecentActivity() {
-  const token = getToken();
   const { user } = useUser();
   const teamId = user?.teamId;
   const {
@@ -58,10 +56,10 @@ export function RecentActivity() {
     error,
     isLoading,
   } = useSWR(
-    token && teamId !== undefined
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities?teamId=${teamId ?? ''}`, token, teamId]
+    teamId !== undefined
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities?teamId=${teamId ?? ''}`, teamId]
       : null,
-    ([url, token]) => fetcher(url, token),
+    ([url]) => fetcher(url),
     { refreshInterval: 60000 },
   );
 

@@ -14,7 +14,7 @@ export const useUser = () => {
     }
 
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {

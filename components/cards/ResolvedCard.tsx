@@ -1,23 +1,17 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { RiProgress8Line } from 'react-icons/ri';
 
 export default function ResolvedIssuesCard() {
   const [resolvedIssues, setResolvedIssues] = useState<number | null>(null);
-  const token = getToken();
 
   useEffect(() => {
     const fetchResolvedIssues = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/resolved`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
+          { credentials: 'include' },
         );
         const data = await res.json();
         setResolvedIssues(data.resolvedIssues);

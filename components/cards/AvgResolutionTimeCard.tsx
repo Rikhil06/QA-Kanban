@@ -1,21 +1,15 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { IoTimerOutline } from 'react-icons/io5';
 
 export default function AvgResolutionTimeCard() {
   const [avgTime, setAvgTime] = useState<string | null>(null);
-  const token = getToken();
 
   useEffect(() => {
     fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/avg-resolution-time`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      { credentials: 'include' },
     )
       .then((res) => res.json())
       .then((data) => setAvgTime(data.avgResolutionTimeHours))

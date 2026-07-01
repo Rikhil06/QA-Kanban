@@ -65,8 +65,8 @@ export default function NotificationsPage() {
   const [markingAll, setMarkingAll] = useState(false);
 
   const { data, error, isLoading, mutate } = useSWR(
-    token ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token] : null,
-    ([url, t]) => fetcher(url, t),
+    token ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications` : null,
+    fetcher,
     { refreshInterval: 15000 },
   );
 
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
   const markRead = async (id: string) => {
     await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/${id}/read`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     });
     mutate();
   };
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
     setMarkingAll(true);
     await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/mark-all-read`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     });
     await mutate();
     setMarkingAll(false);

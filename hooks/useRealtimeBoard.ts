@@ -15,7 +15,6 @@ export type BoardEvent =
 interface UseRealtimeBoardOptions {
   slug: string;
   teamId: string | undefined;
-  token: string | undefined;
   onConnected?: () => void;
   onDisconnected?: () => void;
 }
@@ -30,14 +29,13 @@ interface UseRealtimeBoardOptions {
  *
  * Backend must:
  *   1. Accept a Socket.io connection at NEXT_PUBLIC_BACKEND_URL
- *   2. Authenticate via the `auth: { token }` handshake
+ *   2. Authenticate via the httpOnly `token` cookie (sent automatically via withCredentials)
  *   3. Join clients to a room named `site:${slug}` on connection
  *   4. Emit the event types defined in BoardEvent above
  */
 export function useRealtimeBoard({
   slug,
   teamId,
-  token,
   onConnected,
   onDisconnected,
 }: UseRealtimeBoardOptions) {
@@ -59,13 +57,13 @@ export function useRealtimeBoard({
   }, [queryClient, slug, teamId]);
 
   useEffect(() => {
-    if (!token || !slug) return;
+    if (!slug) return;
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!backendUrl) return;
 
     const socket = io(backendUrl, {
-      auth: { token },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
@@ -105,7 +103,7 @@ export function useRealtimeBoard({
       socketRef.current = null;
       isConnectedRef.current = false;
     };
-  }, [slug, token, invalidateBoard, invalidateColumns]);
+  }, [slug, invalidateBoard, invalidateColumns]);
 
   return {
     isConnected: isConnectedRef.current,

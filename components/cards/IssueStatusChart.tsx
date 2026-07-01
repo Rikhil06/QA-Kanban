@@ -1,6 +1,5 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
@@ -43,18 +42,16 @@ function IssueStatusChartSkeleton() {
 }
 
 export function IssueStatusChart() {
-  const token = getToken();
   const { user } = useUser();
   const teamId = user?.teamId;
   const { data: issuesSummary, isLoading } = useSWR(
-    token && teamId !== undefined
+    teamId !== undefined
       ? [
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary?teamId=${teamId ?? ''}`,
-          token,
           teamId,
         ]
       : null,
-    ([url, token]) => fetcher(url, token),
+    ([url]) => fetcher(url),
   );
 
   if (isLoading) return <IssueStatusChartSkeleton />;

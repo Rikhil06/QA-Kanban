@@ -13,26 +13,26 @@ function OAuthCallbackHandler() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Token is delivered via URL fragment (#token=...) to keep it out of server logs
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
-    const token = hashParams.get('token');
     const err = searchParams.get('error');
+    const success = searchParams.get('success');
 
     if (err) {
       setError(
-        err === 'access_denied'
+        err === 'access_denied' || err === 'oauth_cancelled'
           ? 'You cancelled the login. Please try again.'
+          : err === 'state_mismatch'
+          ? 'Security check failed. Please try again.'
           : 'Authentication failed. Please try again.',
       );
       return;
     }
 
-    if (token) {
-      setToken(token);
+    if (success === '1') {
+      // Backend already set the httpOnly JWT cookie. Just record the session flag.
+      setToken('1');
       router.replace('/');
     } else {
-      setError('No token received. Please try logging in again.');
+      setError('No session received. Please try logging in again.');
     }
   }, [searchParams, router]);
 

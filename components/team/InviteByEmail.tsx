@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getToken } from '@/lib/auth';
 import { Mail, Check, Send } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -16,7 +15,6 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
   const [isValid, setIsValid] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const token = getToken();
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -36,10 +34,8 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${teamId}/invite-email`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ teamId, email, role }),
         },
       );
@@ -53,11 +49,21 @@ export function InviteByEmail({ teamId }: InviteByEmailProps) {
         setIsValid(true);
         setEmail('');
       } else {
-        alert(data.error);
         setIsLoading(false);
-        toast.error(`Invite failed to send to ${email}`);
         setShowSuccess(false);
         setIsValid(false);
+        const isLimitError = res.status === 403 || res.status === 402;
+        if (isLimitError) {
+          toast.error(
+            <span>
+              {data.error || 'Member limit reached.'}{' '}
+              <a href="/usage-billing" className="underline font-medium">Upgrade plan →</a>
+            </span>,
+            { autoClose: 6000 },
+          );
+        } else {
+          toast.error(data.error || 'Failed to send invite');
+        }
       }
     } catch (err) {
       console.error(err);

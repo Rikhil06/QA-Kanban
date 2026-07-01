@@ -1,14 +1,12 @@
-import { getToken } from '@/lib/auth';
 import { toast } from 'react-toastify';
 
 export async function deleteReport(reportId: string, reportName: string): Promise<void> {
   try {
-    const token = getToken();
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${reportId}`,
       {
         method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
       },
     );
 

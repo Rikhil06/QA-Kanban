@@ -2,17 +2,11 @@ type OpenIssuesResponse = {
   openIssues: number;
 };
 
-export async function fetchOpenIssues(
-  token: string | null,
-): Promise<OpenIssuesResponse> {
+export async function fetchOpenIssues(): Promise<OpenIssuesResponse> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/open-issues`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      { credentials: 'include' },
     );
 
     if (!res.ok) {

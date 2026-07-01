@@ -97,6 +97,7 @@ function RegisterContent() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ email: email.trim().toLowerCase(), password, name }),
         },
       );
@@ -117,10 +118,8 @@ function RegisterContent() {
       } else if (inviteCode) {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${data.token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ code: inviteCode }),
         });
         sessionStorage.removeItem('invite_code');

@@ -2,15 +2,12 @@
 
 import { useUser } from '@/hooks/useUser';
 import { useRouter } from 'next/navigation';
-import { getToken } from '@/lib/auth';
 import { UsersTasks } from '@/components/cards/UsersTasks';
 import { Notifications } from '@/components/cards/Notifications';
 import { RecentActivity } from '@/components/cards/RecentActivity';
 import { IssueStatusChart } from '@/components/cards/IssueStatusChart';
 import { MySites } from '@/components/cards/MySites';
 import { AnnotureLoader } from '@/components/AnnotureLoader';
-
-const token = getToken();
 
 export default function Page() {
   const { user, loading } = useUser();

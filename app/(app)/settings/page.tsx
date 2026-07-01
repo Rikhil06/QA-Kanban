@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 import { clearToken } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -30,7 +29,6 @@ type Section = 'profile' | 'security' | 'notifications' | 'danger';
 
 export default function SettingsPage() {
   const { user, refreshUser, logout } = useUser();
-  const token = getToken();
   const router = useRouter();
 
   const [activeSection, setActiveSection] = useState<Section>('profile');
@@ -95,6 +93,11 @@ export default function SettingsPage() {
   // ── Danger zone ───────────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteTeamConfirm, setDeleteTeamConfirm] = useState('');
+  const [deleteTeamLoading, setDeleteTeamLoading] = useState(false);
+
+  const isTeamOwner = user?.role === 'owner';
+  const teamName = user?.team?.name ?? '';
 
   // ─────────────────────────────────────────────────────────────────
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -105,10 +108,8 @@ export default function SettingsPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name, email }),
         },
       );
@@ -142,10 +143,8 @@ export default function SettingsPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/change-password`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ currentPassword, newPassword }),
         },
       );
@@ -173,10 +172,8 @@ export default function SettingsPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me/notifications`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             taskAssigned: notifTaskAssigned,
             taskOverdue: notifTaskOverdue,
@@ -205,10 +202,16 @@ export default function SettingsPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`,
         {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email: deleteConfirm }),
         },
       );
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to delete account. Please try again.', { autoClose: 8000 });
+        return;
+      }
       logout();
       clearToken();
       router.push('/register');
@@ -216,6 +219,35 @@ export default function SettingsPage() {
       toast.error('Failed to delete account. Please try again.');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!teamName || deleteTeamConfirm !== teamName) {
+      toast.error('Team name does not match');
+      return;
+    }
+    setDeleteTeamLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to delete team.');
+        return;
+      }
+      logout();
+      clearToken();
+      router.push('/onboarding/team');
+    } catch {
+      toast.error('Failed to delete team. Please try again.');
+    } finally {
+      setDeleteTeamLoading(false);
     }
   };
 
@@ -517,37 +549,85 @@ export default function SettingsPage() {
 
             {/* ── Danger Zone ───────────────────────────────────── */}
             {activeSection === 'danger' && (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
-                <h2 className="text-red-400 font-medium mb-1">Danger Zone</h2>
-                <p className="text-white/40 text-sm mb-6">
-                  These actions are permanent and cannot be undone.
-                </p>
+              <div className="space-y-6">
 
-                <div className="space-y-2">
-                  <p className="text-white/70 text-sm">
-                    To confirm, type your email address{' '}
-                    <span className="text-white/90 font-mono">{user?.email}</span>{' '}
-                    below.
+                {/* Delete team (owners only) */}
+                {isTeamOwner && (
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+                    <h2 className="text-red-400 font-medium mb-1">Delete Team</h2>
+                    <p className="text-white/40 text-sm mb-4">
+                      Permanently deletes your team, all boards, all screenshots, and cancels your Stripe subscription. This cannot be undone.
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-white/70 text-sm">
+                        To confirm, type your team name{' '}
+                        <span className="text-white/90 font-mono">{teamName}</span>{' '}
+                        below.
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteTeamConfirm}
+                        onChange={(e) => setDeleteTeamConfirm(e.target.value)}
+                        className="w-full bg-[#0F0F0F] border border-red-500/30 rounded-lg px-4 py-3 text-white/90 placeholder:text-white/20 focus:outline-none focus:border-red-500/60 focus:ring-2 focus:ring-red-500/20 transition-all"
+                        placeholder={teamName}
+                      />
+                      <button
+                        onClick={handleDeleteTeam}
+                        disabled={deleteTeamConfirm !== teamName || deleteTeamLoading}
+                        className="mt-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {deleteTeamLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Deleting team...</>
+                        ) : (
+                          <><Trash2 className="w-4 h-4" /> Permanently delete team</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delete account */}
+                <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+                  <h2 className="text-red-400 font-medium mb-1">Delete Account</h2>
+                  <p className="text-white/40 text-sm mb-4">
+                    Permanently deletes your user account.{' '}
+                    {isTeamOwner
+                      ? 'You must delete your team above before you can delete your account.'
+                      : 'You will be removed from your team. This cannot be undone.'}
                   </p>
-                  <input
-                    type="email"
-                    value={deleteConfirm}
-                    onChange={(e) => setDeleteConfirm(e.target.value)}
-                    className="w-full bg-[#0F0F0F] border border-red-500/30 rounded-lg px-4 py-3 text-white/90 placeholder:text-white/20 focus:outline-none focus:border-red-500/60 focus:ring-2 focus:ring-red-500/20 transition-all"
-                    placeholder={user?.email}
-                  />
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleteConfirm !== user?.email || deleteLoading}
-                    className="mt-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {deleteLoading ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
-                    ) : (
-                      <><Trash2 className="w-4 h-4" /> Permanently delete account</>
-                    )}
-                  </button>
+                  {isTeamOwner ? (
+                    <p className="text-amber-400/70 text-sm">
+                      Delete your team first, then return here to delete your account.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-white/70 text-sm">
+                        To confirm, type your email address{' '}
+                        <span className="text-white/90 font-mono">{user?.email}</span>{' '}
+                        below.
+                      </p>
+                      <input
+                        type="email"
+                        value={deleteConfirm}
+                        onChange={(e) => setDeleteConfirm(e.target.value)}
+                        className="w-full bg-[#0F0F0F] border border-red-500/30 rounded-lg px-4 py-3 text-white/90 placeholder:text-white/20 focus:outline-none focus:border-red-500/60 focus:ring-2 focus:ring-red-500/20 transition-all"
+                        placeholder={user?.email}
+                      />
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleteConfirm !== user?.email || deleteLoading}
+                        className="mt-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {deleteLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
+                        ) : (
+                          <><Trash2 className="w-4 h-4" /> Permanently delete account</>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
+
               </div>
             )}
 

@@ -5,16 +5,15 @@ import { CreateSiteModal } from '@/components/CreateSiteModal';
 import { SitesEmptyState } from '@/components/emptyStates/Sites';
 import { SitesFilter } from '@/components/filter/SitesFilter';
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 import { fetchSites } from '@/lib/fetchSites';
 import { Site } from '@/types/types';
 import { stripTLD } from '@/utils/stripTLD';
 import { useEffect, useState } from 'react';
 import slugify from 'slugify';
 import { AnnotureLoader } from '@/components/AnnotureLoader';
+import { toast } from 'react-toastify';
 
 export default function SitesPage() {
-  const token = getToken();
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<
@@ -36,7 +35,7 @@ export default function SitesPage() {
   useEffect(() => {
     if (!teamId) return;
     const getSites = async () => {
-      const data = await fetchSites(token, teamId);
+      const data = await fetchSites(teamId);
       setSites(data);
       setLoading(false);
     };
@@ -49,7 +48,7 @@ export default function SitesPage() {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}`,
       {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       },
     );
 
@@ -66,10 +65,8 @@ export default function SitesPage() {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/archive`,
       {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ archived: shouldArchive }),
       },
     );
@@ -93,10 +90,8 @@ export default function SitesPage() {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/pin`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ isPinned: true }),
       },
     );
@@ -127,10 +122,8 @@ export default function SitesPage() {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${id}/unpin`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       },
     );
 
@@ -184,21 +177,34 @@ export default function SitesPage() {
   );
 
   const handleCreateSite = async (name: string, url: string) => {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sites/create`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sites/create`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        name: name,
-        url: url,
-        teamId: user?.teamId || null, // optional
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, url, teamId: user?.teamId || null }),
     });
 
-    // setSites([...sites, newSite]);
-    // setShowEmptyState(false); // Show the sites grid after creating
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const isLimitError = res.status === 403 || res.status === 402;
+      if (isLimitError) {
+        toast.error(
+          <span>
+            {data.error || 'Site limit reached.'}{' '}
+            <a href="/usage-billing" className="underline font-medium">Upgrade plan →</a>
+          </span>,
+          { autoClose: 6000 },
+        );
+      } else {
+        toast.error(data.error || 'Failed to create site');
+      }
+      return;
+    }
+
+    // Refetch the full sites list so we get the correctly-shaped objects
+    const refreshed = await fetchSites(user?.teamId);
+    setSites(refreshed);
+    setShowEmptyState(false);
   };
 
   if (loading)

@@ -1,20 +1,16 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { fetchOpenIssues } from '@/utils/fetchOpenIssues';
 import { useEffect, useState } from 'react';
 import { RiProgress2Line } from "react-icons/ri";
 
 export default function OpenIssuesCard() {
   const [openIssues, setOpenIssues] = useState<number | null>(null);
-  const token = getToken();
 
 useEffect(() => {
-  if (!token) return;
-
   const loadOpenIssues = async () => {
     try {
-      const data = await fetchOpenIssues(token);
+      const data = await fetchOpenIssues();
       setOpenIssues(data.openIssues);
     } catch (err) {
       console.error(err);
@@ -23,7 +19,7 @@ useEffect(() => {
   };
 
   loadOpenIssues();
-}, [token]);
+}, []);
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex items-center gap-4 border border-gray-100 hover:shadow-lg transition">

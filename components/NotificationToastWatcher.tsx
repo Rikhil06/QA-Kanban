@@ -53,9 +53,9 @@ export function NotificationToastWatcher() {
 
   const { data } = useSWR(
     token
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token]
+      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`
       : null,
-    ([url, t]: [string, string]) => fetcher(url, t),
+    fetcher,
     { refreshInterval: 60000 },
   );
 
@@ -99,7 +99,7 @@ export function NotificationToastWatcher() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/mark-seen`,
-          { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
+          { method: 'POST', credentials: 'include' },
         );
         if (res.ok) {
           const result = await res.json();
@@ -111,7 +111,7 @@ export function NotificationToastWatcher() {
         // non-critical — next poll will retry with the same unseen set
       }
     })();
-  }, [data, user, token, setLastSeenNotificationsAt]);
+  }, [data, user, setLastSeenNotificationsAt]);
 
   return null;
 }

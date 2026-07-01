@@ -1,5 +1,4 @@
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 import { fetcher } from '@/lib/fetcher';
 import { Capitalize } from '@/utils/helpers';
 import { AlertCircle, Loader, TrendingUp } from 'lucide-react';
@@ -30,24 +29,23 @@ function nextPlan(plan: string): string {
 }
 
 export function UsagePanel() {
-  const token = getToken();
   const { user } = useUser();
   const plan = (user?.team?.plan ?? 'free').toLowerCase();
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 
   // Always fetch team stats — works for free users without a subscription
   const { data: stats, isLoading: statsLoading } = useSWR(
-    token && user?.teamId ? ['team-stats', user.teamId, token] : null,
-    ([, teamId, tok]) => fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/team/${teamId}/stats`, tok),
+    user?.teamId ? ['team-stats', user.teamId] : null,
+    ([, teamId]) => fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/team/${teamId}/stats`),
   );
 
   // Only fetch billing date when a paid subscription exists
   const { data: billingData } = useSWR(
-    token && user?.team?.subscription?.stripeSubscriptionId
-      ? ['billing-date', user.team.subscription.stripeSubscriptionId, token]
+    user?.team?.subscription?.stripeSubscriptionId
+      ? ['billing-date', user.team.subscription.stripeSubscriptionId]
       : null,
-    ([, subId, tok]) =>
-      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/next-renewal/${subId}`, tok),
+    ([, subId]) =>
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/next-renewal/${subId}`),
   );
 
   if (statsLoading) {

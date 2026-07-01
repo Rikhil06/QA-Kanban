@@ -1,21 +1,15 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { TbReportSearch } from 'react-icons/tb';
 
 export default function ReportsThisWeekCard() {
   const [count, setCount] = useState<number | null>(null);
-  const token = getToken();
 
   useEffect(() => {
     fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/reports-this-week`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      { credentials: 'include' },
     )
       .then((res) => res.json())
       .then((data) => setCount(data.reportsThisWeek))

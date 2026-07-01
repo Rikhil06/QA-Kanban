@@ -1,13 +1,8 @@
-import { getToken } from './auth';
-
 export const fetchUsersForSite = async (siteId: string) => {
   try {
-    const token = getToken();
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/users`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
+      { credentials: 'include' },
     );
 
     if (!res.ok) {

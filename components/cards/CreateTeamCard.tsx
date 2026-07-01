@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Users, Upload, X, Check, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getToken } from '@/lib/auth';
 
 interface CreateTeamCardProps {
   isSelected: boolean;
@@ -74,7 +73,6 @@ export function CreateTeamCard({
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('free');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const token = getToken();
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,7 +97,7 @@ export function CreateTeamCard({
 
       const createRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/create`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData },
+        { method: 'POST', credentials: 'include', body: formData },
       );
       const createData = await createRes.json();
 
@@ -118,7 +116,8 @@ export function CreateTeamCard({
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/checkout`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ teamId, priceId: plan.priceId }),
           },
         );
@@ -223,7 +222,17 @@ export function CreateTeamCard({
 
             {/* Plan Selector */}
             <div>
-              <label className="block text-[#E6E6E6] text-sm mb-3">Choose a Plan</label>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-[#E6E6E6] text-sm">Choose a Plan</label>
+                <a
+                  href="https://annoture.com/#pricing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#4A9EFF] text-xs hover:underline"
+                >
+                  Compare plans →
+                </a>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 {PLANS.map((plan) => {
                   const isActive = selectedPlan === plan.id;
@@ -241,29 +250,35 @@ export function CreateTeamCard({
                           : 'border-[#2A2A2A] bg-[#0E0E0E] hover:border-[#4A9EFF]/40'
                       }`}
                     >
+                      {/* Header row: name + selected check */}
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <span className="text-[#E6E6E6] font-semibold text-sm leading-tight">{plan.name}</span>
+                        {isActive && (
+                          <span className="shrink-0 w-4 h-4 rounded-full bg-[#4A9EFF] flex items-center justify-center mt-0.5">
+                            <Check size={10} className="text-white" />
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Badge inline below name */}
                       {plan.badge && (
-                        <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-medium text-purple-300 bg-purple-500/15 border border-purple-500/20 px-1.5 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-300 bg-purple-500/15 border border-purple-500/20 px-1.5 py-0.5 rounded-full mb-2">
                           <Zap size={9} />
                           {plan.badge}
                         </span>
                       )}
-                      {isActive && !plan.badge && (
-                        <span className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#4A9EFF] flex items-center justify-center">
-                          <Check size={10} className="text-white" />
-                        </span>
-                      )}
-                      <div className="mb-2">
-                        <span className="text-[#E6E6E6] font-semibold text-sm">{plan.name}</span>
-                        <p className="text-[#666] text-[11px] mt-0.5">{plan.tag}</p>
-                      </div>
+
+                      <p className="text-[#666] text-[11px] mb-2">{plan.tag}</p>
+
                       <div className="flex items-baseline gap-0.5 mb-3">
                         <span className="text-[#E6E6E6] text-lg font-bold">{plan.price}</span>
                         {plan.period && <span className="text-[#666] text-xs">{plan.period}</span>}
                       </div>
-                      <ul className="space-y-1">
+
+                      <ul className="space-y-1.5">
                         {plan.features.map((f) => (
-                          <li key={f} className="flex items-center gap-1.5 text-[#A6A6A6] text-[11px]">
-                            <Check size={10} className="text-[#4A9EFF] shrink-0" />
+                          <li key={f} className="flex items-start gap-1.5 text-[#A6A6A6] text-[11px] leading-tight">
+                            <Check size={10} className="text-[#4A9EFF] shrink-0 mt-0.5" />
                             {f}
                           </li>
                         ))}

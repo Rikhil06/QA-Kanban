@@ -1,6 +1,5 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { fetchSites } from '@/lib/fetchSites';
 import { Site } from '@/types/types';
 import { timeAgo } from '@/utils/helpers';
@@ -43,7 +42,6 @@ function MySitesSkeleton() {
 }
 
 export function MySites() {
-  const token = getToken();
   const { user } = useUser();
   const teamId = user?.teamId;
   const [sites, setSites] = useState<Site[]>([]);
@@ -54,7 +52,7 @@ export function MySites() {
     if (!teamId) return;
     const getSites = async () => {
       try {
-        const data = await fetchSites(token, teamId);
+        const data = await fetchSites(teamId);
         setSites(data);
       } catch {
         setHasError(true);

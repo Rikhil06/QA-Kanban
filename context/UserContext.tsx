@@ -74,12 +74,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const headers = { Authorization: `Bearer ${token}` };
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
 
       const [meRes, teamsRes] = await Promise.all([
-        fetch(`${base}/api/auth/me`, { headers }),
-        fetch(`${base}/api/teams`, { headers }),
+        fetch(`${base}/api/auth/me`, { credentials: 'include' }),
+        fetch(`${base}/api/teams`, { credentials: 'include' }),
       ]);
 
       if (!meRes.ok) throw new Error();

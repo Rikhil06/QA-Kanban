@@ -7,7 +7,6 @@ import { TeamMembersList } from '@/components/team/TeamMembersList';
 import { toast } from 'react-toastify';
 import { Users } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 
 export interface TeamMember {
   id: string;
@@ -25,17 +24,12 @@ export default function Page() {
   const [inviteCodeOneTime, setInviteCodeOneTime] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = getToken();
   const { user } = useUser();
 
   useEffect(() => {
     fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/members`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      { credentials: 'include' },
     )
       .then((res) => res.json())
       .then((data) => setMembers(data.members))
@@ -47,9 +41,7 @@ export default function Page() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { credentials: 'include' },
         );
 
         if (!res.ok) throw new Error('Failed to load invite code');
@@ -73,10 +65,8 @@ export default function Page() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/invite-link`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ oneTime }),
         },
       );
@@ -108,7 +98,7 @@ export default function Page() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/${user?.teamId}/members/${userId}`,
         {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         },
       );
       if (!res.ok) {

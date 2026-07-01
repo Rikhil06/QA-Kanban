@@ -37,7 +37,6 @@ import {
   Comment,
   Attachment,
 } from '@/types/types';
-import { getToken } from '@/lib/auth';
 import { usePathname } from 'next/navigation';
 import {
   Capitalize,
@@ -69,7 +68,6 @@ export default function ReportModal({
   onAssigneeChange,
 }: ReportModalProps) {
   const { user, loading } = useUser();
-  const token = getToken();
   const pathname = usePathname();
 
   const [report, setReport] = useState<Report | null>(null);
@@ -92,17 +90,13 @@ export default function ReportModal({
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isImageOpen, setIsImageOpen] = useState(false);
+  const [mediaTab, setMediaTab] = useState<'screenshot' | 'video'>('screenshot');
 
   useEffect(() => {
-    // Read the token inside the effect so it's always evaluated client-side,
-    // never captured from an SSR render where js-cookie returns undefined.
-    const t = getToken();
-    const headers = { Authorization: `Bearer ${t}` };
-
     const fetchReport = async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}`,
-        { headers },
+        { credentials: 'include' },
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -116,7 +110,7 @@ export default function ReportModal({
     const fetchComments = async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${id}/comments`,
-        { headers },
+        { credentials: 'include' },
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -127,7 +121,7 @@ export default function ReportModal({
       if (!slug) return;
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/columns?teamId=${user?.teamId}`,
-        { headers },
+        { credentials: 'include' },
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -146,10 +140,9 @@ export default function ReportModal({
 
     const fetchUsers = async () => {
       try {
-        const t = getToken();
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${siteId}/users`,
-          { headers: { Authorization: `Bearer ${t}` } },
+          { credentials: 'include' },
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -164,11 +157,10 @@ export default function ReportModal({
 
   // Re-fetch report data when another user changes this ticket's priority or status
   useEffect(() => {
-    const t = getToken();
-    if (!t || !id) return;
+    if (!id) return;
 
     const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL!, {
-      auth: { token: t },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
     });
 
@@ -192,10 +184,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/status`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ status: newStatus }),
         },
       );
@@ -228,10 +218,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/priority`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ priority: newStatus }),
         },
       );
@@ -258,10 +246,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/assignee`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ userId: newUserId, userName: newUserName }),
         },
       );
@@ -284,7 +270,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/type`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ type: newType }),
         },
       );
@@ -303,10 +290,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/due-date`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ dueDate: date?.toISOString().split('T')[0] }),
         },
       );
@@ -359,7 +344,7 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${id}/comments`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
           body: formData,
         },
       );
@@ -391,10 +376,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${id}/description`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ comment: editedDescription }),
         },
       );
@@ -416,10 +399,8 @@ export default function ReportModal({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reports/${id}/comments`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             content: replyContent.trim(),
             parentId, // 👈 this makes it a reply
@@ -542,62 +523,88 @@ export default function ReportModal({
 
         {/* Content */}
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-          {/* Screenshot */}
-          <div className="border-b border-white/8 p-6">
-            <div
-              className="overflow-hidden rounded-lg border border-white/8 bg-[#222] relative h-64 cursor-zoom-in"
-              onClick={() => setIsImageOpen(true)}
-            >
-              <Image
-                src={report.imagePath}
-                alt="Screenshot"
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-
-            {isImageOpen && createPortal(
-              <div
-                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-                onClick={() => setIsImageOpen(false)}
-              >
-                <button
-                  className="absolute top-4 right-4 text-white/70 hover:text-white"
-                  onClick={() => setIsImageOpen(false)}
-                >
-                  <X size={28} />
-                </button>
-                <div
-                  className="relative max-w-[90vw] max-h-[90vh] w-full h-full"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Image
-                    src={report.imagePath}
-                    alt="Screenshot"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
+          {/* Screenshot / Video tabs */}
+          <div className="border-b border-white/8">
+            {/* Tab bar — only show tabs when a video exists */}
+            {report.videoPath && (
+              <div className="flex gap-1 px-6 pt-4">
+                <div className="flex items-center gap-0.5 bg-white/6 rounded-lg p-1">
+                  {(['screenshot', 'video'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setMediaTab(tab)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                        mediaTab === tab
+                          ? 'bg-white/12 text-white shadow-sm'
+                          : 'text-white/40 hover:text-white/70'
+                      }`}
+                    >
+                      {tab === 'video' ? 'Screen Recording' : 'Screenshot'}
+                    </button>
+                  ))}
                 </div>
-              </div>,
-              document.body
+              </div>
             )}
-          </div>
 
-          {/* Screen recording — rolling 10-second capture before the click (agency plan) */}
-          {report.videoPath && (
-            <div className="border-b border-white/8 p-6">
-              <label className="mb-3 block text-xs text-white/40">Screen Recording</label>
-              <video
-                src={report.videoPath}
-                controls
-                playsInline
-                className="w-full rounded-lg border border-white/8 bg-black"
-                style={{ maxHeight: '340px' }}
-              />
+            <div className="p-6 pt-4">
+              {/* Screenshot panel */}
+              {(!report.videoPath || mediaTab === 'screenshot') && (
+                <>
+                  <div
+                    className="overflow-hidden rounded-lg border border-white/8 bg-[#222] relative h-64 cursor-zoom-in"
+                    onClick={() => setIsImageOpen(true)}
+                  >
+                    <Image
+                      src={report.imagePath}
+                      alt="Screenshot"
+                      fill
+                      loading="eager"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+
+                  {isImageOpen && createPortal(
+                    <div
+                      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                      onClick={() => setIsImageOpen(false)}
+                    >
+                      <button
+                        className="absolute top-4 right-4 text-white/70 hover:text-white"
+                        onClick={() => setIsImageOpen(false)}
+                      >
+                        <X size={28} />
+                      </button>
+                      <div
+                        className="relative max-w-[90vw] max-h-[90vh] w-full h-full"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Image
+                          src={report.imagePath}
+                          alt="Screenshot"
+                          fill
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </>
+              )}
+
+              {/* Video panel */}
+              {report.videoPath && mediaTab === 'video' && (
+                <video
+                  src={report.videoPath}
+                  controls
+                  playsInline
+                  className="w-full rounded-lg border border-white/8 bg-black"
+                  style={{ maxHeight: '340px' }}
+                />
+              )}
             </div>
-          )}
+          </div>
 
           {/* Environment — read-only diagnostic metadata captured at report time */}
           <div className="grid grid-cols-4 gap-4 border-b border-white/8 p-6">

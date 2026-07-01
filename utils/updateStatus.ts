@@ -1,6 +1,5 @@
 // utils/updateStatus.ts
 export async function updateStatus(
-  token: string | undefined,
   reportId: string,
   newStatus: string,
 ) {
@@ -9,10 +8,8 @@ export async function updateStatus(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/report/${reportId}/status`,
       {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       },
     );

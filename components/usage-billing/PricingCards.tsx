@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, Info } from 'lucide-react';
 import UpgradeButton from '../stripe/UpgradeButton';
 import { useUser } from '@/context/UserContext';
 import { Capitalize } from '@/utils/helpers';
@@ -82,6 +82,7 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
   };
 
   const { user } = useUser();
+  const isOwner = user?.role === 'owner';
 
   function getStripePriceId(
     plan: 'free' | 'starter' | 'team' | 'agency',
@@ -113,6 +114,12 @@ export function PricingCards({ billingPeriod }: PricingCardsProps) {
 
   return (
     <div className="mb-16">
+      {!isOwner && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-lg bg-white/4 border border-white/8 text-sm text-white/50">
+          <Info className="w-4 h-4 shrink-0 text-white/30" />
+          Only the team owner can change the plan. Contact your owner to upgrade.
+        </div>
+      )}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {plans.map((plan) => {
         const isCurrentPlan = user?.team.plan === plan.id;

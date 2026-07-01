@@ -3,15 +3,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function proxy(req: NextRequest) {
-  const token =
-    req.cookies.get('token')?.value ??
-    req.headers.get('authorization')?.split(' ')[1];
-
   const url = req.nextUrl.clone();
   const path = url.pathname;
 
-  // If not logged in, just continue or redirect if you prefer
-  if (!token) {
+  // Forward the incoming cookies to the backend so httpOnly auth cookie is sent
+  const cookieHeader = req.headers.get('cookie') ?? '';
+
+  if (!cookieHeader) {
     return NextResponse.next();
   }
 
@@ -22,7 +20,7 @@ export async function proxy(req: NextRequest) {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          cookie: cookieHeader,
         },
         // Prevent edge caching
         cache: 'no-store',

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, Link2, UserMinus, ChevronDown, Check, Send, Clock, BarChart2 } from 'lucide-react';
-import { getToken } from '@/lib/auth';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AccessEntry {
@@ -94,7 +93,6 @@ function Avatar({ name }: { name: string }) {
 }
 
 export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardModalProps) {
-  const token = getToken();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'viewer' | 'commenter' | 'editor'>('viewer');
   const [accesses, setAccesses] = useState<AccessEntry[]>([]);
@@ -110,7 +108,7 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/share`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { credentials: 'include' },
       );
       if (res.ok) {
         const data = await res.json();
@@ -143,10 +141,8 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/share`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ email, role }),
         },
       );
@@ -170,10 +166,8 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/share/${userId}`,
       {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole }),
       },
     );
@@ -187,7 +181,7 @@ export default function ShareBoardModal({ slug, siteName, onClose }: ShareBoardM
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/site/${slug}/share/${userId}`,
       {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       },
     );
     setAccesses((prev) => prev.filter((a) => a.user.id !== userId));

@@ -4,7 +4,7 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const cspValue = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
@@ -17,7 +17,7 @@ const cspValue = [
     'https://o*.ingest.sentry.io',
     isDev ? 'http://localhost:* ws://localhost:*' : '',
   ].filter(Boolean).join(' '),
-  "media-src 'self' https://*.r2.cloudflarestorage.com",
+  "media-src 'self' https:",
   "object-src 'none'",
   "frame-ancestors 'self'",
 ].join('; ');
@@ -29,6 +29,8 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   { key: 'Content-Security-Policy', value: cspValue },
+  // Only send HSTS in production — dev uses HTTP so this would break local dev
+  ...(isDev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]),
 ];
 
 const nextConfig = {
@@ -75,22 +77,26 @@ const nextConfig = {
         hostname: 'qa-backend-105l.onrender.com',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '4000',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-        port: '4000',
-        pathname: '/uploads/**',
-      },
-      {
         protocol: 'https',
         hostname: 'www.google.com',
         pathname: '/s2/favicons/**',
       },
+      ...(isDev
+        ? [
+            {
+              protocol: 'http' as const,
+              hostname: 'localhost',
+              port: '4000',
+              pathname: '/uploads/**',
+            },
+            {
+              protocol: 'http' as const,
+              hostname: '127.0.0.1',
+              port: '4000',
+              pathname: '/uploads/**',
+            },
+          ]
+        : []),
     ],
   },
   devIndicators: false,

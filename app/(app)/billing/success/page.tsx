@@ -1,6 +1,5 @@
 'use client';
 
-import { getToken } from '@/lib/auth';
 import { Capitalize } from '@/utils/helpers';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
@@ -23,7 +22,6 @@ export default function BillingSuccess() {
 function BillingSuccessContent() {
   const params = useSearchParams();
   const teamId = params.get('team');
-  const token = getToken();
 
   const [status, setStatus] = useState<'pending' | 'active'>('pending');
   const [data, setData] = useState<Team | null>(null);
@@ -33,11 +31,7 @@ function BillingSuccessContent() {
       // Call your /api/auth/me (or team endpoint) to re-fetch plan
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { credentials: 'include' },
       );
 
       const data = await res.json();

@@ -28,8 +28,8 @@ export default function Header() {
 
   // Share the same SWR key as Notifications.tsx so only one request fires
   const { data: notifData } = useSWR(
-    token ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications`, token] : null,
-    ([url, t]) => fetcher(url, t),
+    token ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications` : null,
+    fetcher,
     { refreshInterval: 60000 },
   );
   const unreadCount = Array.isArray(notifData?.notifications)

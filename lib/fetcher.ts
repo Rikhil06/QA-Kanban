@@ -1,9 +1,7 @@
 // lib/fetcher.ts
-export const fetcher = async (url: string, token?: string) => {
+export const fetcher = async (url: string) => {
   const res = await fetch(url, {
-    headers: token
-      ? { Authorization: `Bearer ${token}` }
-      : undefined,
+    credentials: 'include',
   });
 
   if (!res.ok) {

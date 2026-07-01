@@ -30,7 +30,7 @@ export default function BoardInvitePage() {
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/board-invite/${token}/accept`,
           {
             method: 'POST',
-            headers: { Authorization: `Bearer ${authToken}` },
+            credentials: 'include',
           },
         );
         const data = await res.json();

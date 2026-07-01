@@ -28,7 +28,6 @@ import { CiShare1 } from 'react-icons/ci';
 
 import { fetchSites } from '@/lib/fetchSites';
 import { Site } from '@/types/types';
-import { getToken } from '@/lib/auth';
 import { stripTLD } from '@/utils/stripTLD';
 import { Capitalize } from '@/utils/helpers';
 import { Bell, LayoutList, Users, X } from 'lucide-react';
@@ -39,7 +38,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useUser();
   const logout = useLogout();
-  const token = getToken();
 
   const [sites, setSites] = useState<Site[]>([]);
   const [siteLoading, setSiteLoading] = useState<boolean>(true);
@@ -73,7 +71,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (!teamId) return;
     const getSites = async () => {
-      const data = await fetchSites(token, teamId);
+      const data = await fetchSites(teamId);
       setSites(data);
       setSiteLoading(false);
     };

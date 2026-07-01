@@ -1,4 +1,3 @@
-import { getToken } from '@/lib/auth';
 import { Capitalize } from '@/utils/helpers';
 import { Calendar, AlertCircle, Circle, CheckCircle2 } from 'lucide-react';
 import useSWR from 'swr';
@@ -74,15 +73,14 @@ function UsersTasksSkeleton() {
 }
 
 export function UsersTasks() {
-  const token = getToken();
   const { user } = useUser();
   const teamId = user?.teamId;
 
   const { data: tasks, isLoading, error } = useSWR(
-    token && teamId !== undefined
-      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks?teamId=${teamId ?? ''}`, token, teamId]
+    teamId !== undefined
+      ? [`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users-tasks?teamId=${teamId ?? ''}`, teamId]
       : null,
-    ([url, token]) => fetcher(url, token),
+    ([url]) => fetcher(url),
   );
 
   function normalizePriority(value: string): keyof typeof priorityConfig {

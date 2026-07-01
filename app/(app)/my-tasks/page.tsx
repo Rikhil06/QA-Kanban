@@ -1,7 +1,6 @@
 'use client';
 
 import { TasksFilter } from '@/components/filter/TasksFilter';
-import { getToken } from '@/lib/auth';
 import { fetcher } from '@/lib/fetcher';
 import { StatusData, Task } from '@/types/types';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
@@ -27,7 +26,6 @@ export default function Page() {
 }
 
 function MyTasksContent() {
-  const token = getToken();
   const { user } = useUser();
   const teamId = user?.teamId;
   const router = useRouter();
@@ -67,19 +65,18 @@ function MyTasksContent() {
     queryFn: () =>
       fetcher(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stats/issues-summary?teamId=${teamId ?? ''}`,
-        token,
       ),
     staleTime: STALE.STATS,
-    enabled: !!token && teamId !== undefined,
+    enabled: teamId !== undefined,
   });
 
   // --- React Query: Tasks ---
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: ['tasks', teamId],
     queryFn: () =>
-      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks?teamId=${teamId ?? ''}`, token),
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks?teamId=${teamId ?? ''}`),
     staleTime: STALE.DEFAULT,
-    enabled: !!token && teamId !== undefined,
+    enabled: teamId !== undefined,
   });
 
   const total = issuesSummary.reduce(

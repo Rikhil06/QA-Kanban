@@ -64,7 +64,7 @@ export default function AuthLayout({
 
       {/* Right Side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-2xl">
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center gap-2 mb-12">
             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-500 to-blue-600 flex items-center justify-center">
@@ -109,21 +109,27 @@ export default function AuthLayout({
           {/* Footer Links */}
           <div className="mt-12 flex items-center justify-center gap-6 text-xs text-white/20">
             <a
-              href="/privacy-policy"
+              href="https://annoture.com/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-white/40 transition-colors"
             >
               Privacy Policy
             </a>
             <span>·</span>
             <a
-              href="terms-and-conditions"
+              href="https://annoture.com/terms"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-white/40 transition-colors"
             >
               Terms of Service
             </a>
             <span>·</span>
             <a
-              href="/support"
+              href="https://annoture.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-white/40 transition-colors"
             >
               Support

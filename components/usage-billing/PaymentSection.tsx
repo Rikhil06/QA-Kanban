@@ -1,5 +1,4 @@
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 import { fetcher } from '@/lib/fetcher';
 import { Capitalize } from '@/utils/helpers';
 import { AlertTriangle, CreditCard, Download, Edit2 } from 'lucide-react';
@@ -18,11 +17,11 @@ interface Invoice {
 
 export function PaymentSection() {
   const { user, refreshUser } = useUser();
-  const token = getToken();
   const subId = user?.team?.subscription?.stripeSubscriptionId;
   const subscription = user?.team?.subscription;
   const plan = subscription?.plan ?? 'free';
   const status = subscription?.status ?? 'active';
+  const isOwner = user?.role === 'owner';
 
   const [cancelStep, setCancelStep] = useState<'idle' | 'confirm' | 'loading'>('idle');
   const [cancelDate, setCancelDate] = useState<string | null>(null);
@@ -34,7 +33,8 @@ export function PaymentSection() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/cancel-subscription`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ teamId: user?.teamId }),
       });
       const data = await res.json();
@@ -50,14 +50,14 @@ export function PaymentSection() {
 
   // Independent fetches — a card failure won't block invoices
   const { data: invoices = [], isLoading: invoicesLoading } = useSWR<Invoice[]>(
-    token ? ['invoices', token] : null,
-    ([, tok]: [string, string]) => fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, tok),
+    subId ? 'invoices' : null,
+    () => fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`),
   );
 
   const { data: card, isLoading: cardLoading } = useSWR(
-    token && subId ? ['card', subId, token] : null,
-    ([, id, tok]: [string, string, string]) =>
-      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/card/subscription/${id}`, tok).catch(() => null),
+    subId ? ['card', subId] : null,
+    ([, id]: [string, string]) =>
+      fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/card/subscription/${id}`).catch(() => null),
   );
 
   return (
@@ -157,7 +157,7 @@ export function PaymentSection() {
       </div>
 
       {/* Cancel Subscription */}
-      {plan !== 'free' && (
+      {plan !== 'free' && isOwner && (
         <div className="mt-8 pt-6 border-t border-white/8">
           {cancelDate || status === 'canceling' ? (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/20">

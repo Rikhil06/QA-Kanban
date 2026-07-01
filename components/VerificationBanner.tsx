@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useUser } from '@/context/UserContext';
-import { getToken } from '@/lib/auth';
 import { toast } from 'react-toastify';
 import { Mail, X } from 'lucide-react';
 
@@ -21,7 +20,7 @@ export function VerificationBanner() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/resend-verification`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${getToken()}` },
+          credentials: 'include',
         },
       );
       if (!res.ok) {

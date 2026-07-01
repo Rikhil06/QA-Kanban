@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { UserPlus, X } from 'lucide-react';
-import { getToken } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 interface JoinTeamCardProps {
@@ -21,7 +20,6 @@ export function JoinTeamCard({
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = getToken();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,10 +40,8 @@ export function JoinTeamCard({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/teams/join`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ code: inviteCode }),
         },
       );

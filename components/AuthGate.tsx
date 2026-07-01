@@ -10,8 +10,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.replace('/login');
+      return;
+    }
+    if (!user.teamId) {
+      router.replace('/onboarding/team');
     }
   }, [user, loading, router]);
 
@@ -19,8 +24,8 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     return <AnnotureLoader className="h-[calc(100vh-64px)]" size="lg" />;
   }
 
-  if (!user) {
-    return null; // prevents layout flashing
+  if (!user || !user.teamId) {
+    return null;
   }
 
   return <>{children}</>;
