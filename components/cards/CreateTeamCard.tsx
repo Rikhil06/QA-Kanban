@@ -144,8 +144,8 @@ export function CreateTeamCard({
         }
       }
 
-      // Free plan or fallback: go to dashboard
-      router.push('/');
+      // Free plan or fallback: go to extension install step
+      router.push('/onboarding/extension');
     } catch {
       setError('Something went wrong. Please try again.');
       setIsLoading(false);

@@ -50,7 +50,7 @@ export function JoinTeamCard({
 
       if (res.ok) {
         setIsSubmitting(false);
-        router.push('/');
+        router.push('/onboarding/extension');
       } else {
         setIsSubmitting(false);
         alert(data.error || 'Failed to create team');
