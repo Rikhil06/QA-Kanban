@@ -226,10 +226,10 @@ export default function PrivacyPolicyPage() {
                         <p className="text-[#E0E0E0]">
                             Please contact us at{' '}
                             <a 
-                            href="mailto:privacy@yourcompany.com" 
+                            href="mailto:privacy@annoture.com" 
                             className="text-white hover:text-[#6B7CFF] transition-colors underline decoration-white/30 hover:decoration-[#6B7CFF]/50"
                             >
-                            privacy@yourcompany.com
+                            privacy@annoture.com
                             </a>
                             . We will respond to your request within 30 days.
                         </p>
@@ -270,19 +270,19 @@ export default function PrivacyPolicyPage() {
                             <p className="text-[#E0E0E0]">
                             Email:{' '}
                             <a 
-                                href="mailto:privacy@yourcompany.com" 
+                                href="mailto:privacy@annoture.com" 
                                 className="text-white hover:text-[#6B7CFF] transition-colors underline decoration-white/30 hover:decoration-[#6B7CFF]/50"
                             >
-                                privacy@yourcompany.com
+                                privacy@annoture.com
                             </a>
                             </p>
                             <p className="text-[#E0E0E0] mt-3">
                             Support:{' '}
                             <a 
-                                href="mailto:support@yourcompany.com" 
+                                href="mailto:support@annoture.com" 
                                 className="text-white hover:text-[#6B7CFF] transition-colors underline decoration-white/30 hover:decoration-[#6B7CFF]/50"
                             >
-                                support@yourcompany.com
+                                support@annoture.com
                             </a>
                             </p>
                         </div>
