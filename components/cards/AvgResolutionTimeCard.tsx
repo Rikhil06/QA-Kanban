@@ -16,7 +16,7 @@ export default function AvgResolutionTimeCard() {
       .catch((err) =>
         console.error('Failed to fetch avg resolution time', err),
       );
-  });
+  }, []);
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-5 flex items-center gap-4 border border-gray-100 hover:shadow-lg transition">

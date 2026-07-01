@@ -26,6 +26,26 @@ export function PaymentSection() {
   const [cancelStep, setCancelStep] = useState<'idle' | 'confirm' | 'loading'>('idle');
   const [cancelDate, setCancelDate] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openBillingPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/billing/portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ returnUrl: window.location.href }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to open portal');
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('Billing portal error:', err);
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const handleCancelSubscription = async () => {
     setCancelStep('loading');
@@ -69,9 +89,13 @@ export function PaymentSection() {
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-white/70">Payment method</span>
           {card && (
-            <button className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors">
+            <button
+              onClick={openBillingPortal}
+              disabled={portalLoading}
+              className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors disabled:opacity-50"
+            >
               <Edit2 className="w-3 h-3" />
-              Update
+              {portalLoading ? 'Loading…' : 'Update'}
             </button>
           )}
         </div>
@@ -101,9 +125,13 @@ export function PaymentSection() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-white/70">Billing email</span>
-          <button className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors">
+          <button
+            onClick={openBillingPortal}
+            disabled={portalLoading}
+            className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors disabled:opacity-50"
+          >
             <Edit2 className="w-3 h-3" />
-            Edit
+            {portalLoading ? 'Loading…' : 'Edit'}
           </button>
         </div>
         <div className="p-4 rounded-lg bg-[#1C1C1C] border border-white/8">
