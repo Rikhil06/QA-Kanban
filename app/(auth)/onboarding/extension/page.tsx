@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Check, ExternalLink } from 'lucide-react';
 
 const CHROME_STORE_URL =
-  'https://chromewebstore.google.com/detail/annoture/pgclbfnhbhgjjacblhcacfgpofmmbddo';
+  'https://chromewebstore.google.com/detail/annoture/bmamimdeecmfddopfkkcfphkddigpimc';
 
 const steps = [
   'Click "Add to Chrome" on the Chrome Web Store page',
