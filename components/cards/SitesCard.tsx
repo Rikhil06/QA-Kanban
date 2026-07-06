@@ -178,7 +178,7 @@ export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite, 
             <div className="absolute top-full right-0 mt-2 w-48 bg-[#222] border border-white/8 rounded-lg shadow-xl overflow-hidden z-10">
               <QuickAction icon={Pin} label={site.isPinned ? 'Unpin Site' : 'Pin Site'} onClick={site.isPinned ? handleUnpinSite : handlePinSite} />
               <QuickAction icon={Kanban} label="Open Kanban Board" link={`reports/${stripTLD(site.slug)}`} />
-              <QuickAction icon={List} label="View Issues" />
+              <QuickAction icon={List} label="View Issues" link={`my-tasks?site=${site.site}`}/>
               <QuickAction icon={Camera} label="View Screenshots" />
               <QuickAction icon={Settings} label="Settings" />
               <div className="h-px bg-white/8 my-1" />
