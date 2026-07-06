@@ -37,15 +37,20 @@ export function SitesEmptyState({ onCreateClick }: { onCreateClick: () => void }
         
         <div className="hidden md:block w-12 h-px bg-linear-to-r from-transparent via-white/8 to-transparent" />
         
-        <div className="flex flex-col items-center gap-3 max-w-[200px]">
-          <div className="w-12 h-12 bg-[#1C1C1C] border border-white/8 rounded-xl flex items-center justify-center">
+        <a
+          href="https://chromewebstore.google.com/detail/annoture/bmamimdeecmfddopfkkcfphkddigpimc"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-3 max-w-[200px] group"
+        >
+          <div className="w-12 h-12 bg-[#1C1C1C] border border-white/8 group-hover:border-purple-500/40 rounded-xl flex items-center justify-center transition-colors">
             <Chrome className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-white mb-1">Install extension</p>
-            <p className="text-xs text-gray-500">Get our Chrome extension for quick issue reporting</p>
+            <p className="text-white mb-1 group-hover:text-purple-300 transition-colors">Install extension <span className="text-purple-400">↗</span></p>
+            <p className="text-xs text-gray-500">Required to capture bugs and screenshots from any page</p>
           </div>
-        </div>
+        </a>
         
         <div className="hidden md:block w-12 h-px bg-linear-to-r from-transparent via-white/8 to-transparent" />
         
