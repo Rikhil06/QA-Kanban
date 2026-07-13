@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, notFound } from 'next/navigation';
+import Link from 'next/link';
 import {
   DragDropContext,
   Droppable,
@@ -17,7 +18,7 @@ import ReportModal from '@/components/ReportModal';
 import { updateStatus } from '@/utils/updateStatus';
 import { Capitalize, getInitials, getPriorityColor } from '@/utils/helpers';
 import { formatTimeAgo } from '@/utils/formatTimeAgo';
-import { Bug, Check, ChevronDown, ChevronLeft, Clock, FileText, GripVertical, Plus, Share2, Trash2, X } from 'lucide-react';
+import { Bug, Check, ChevronDown, ChevronLeft, Clock, FileText, GripVertical, Plus, Settings, Share2, Trash2, X } from 'lucide-react';
 import { exportToCSV, exportToPDF } from '@/utils/exportReports';
 import { fetchUsersForSite } from '@/lib/fetchUsers';
 import { toast } from 'react-toastify';
@@ -615,6 +616,12 @@ function SiteReportsContent() {
             <Share2 className="w-3 h-3" />
             Share
           </button>
+
+          {/* Settings button */}
+          <Link href={`/reports/${slug}/settings`} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/4 text-white/50 hover:text-white/80 hover:bg-white/8 hover:border-white/15 transition-all">
+            <Settings className="w-3 h-3" />
+            Settings
+          </Link>
 
           {/* Live indicator */}
           <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${

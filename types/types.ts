@@ -37,6 +37,8 @@ export type Report = {
     cssPath?: string;
     consoleLogs?: { level: 'error' | 'warn'; message: string; timestamp: string }[];
     videoPath?: string;
+    githubIssueNumber?: number;
+    githubIssueUrl?: string;
 };
 
 export type Comment = {
