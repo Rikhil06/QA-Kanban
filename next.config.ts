@@ -12,7 +12,9 @@ const cspValue = [
   [
     "connect-src 'self'",
     'https://*.onrender.com',
+    'wss://*.onrender.com',
     'https://api.annoture.com',
+    'wss://api.annoture.com',
     'https://api.stripe.com',
     'https://*.sentry.io',
     'https://o*.ingest.sentry.io',
