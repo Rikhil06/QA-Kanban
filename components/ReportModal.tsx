@@ -702,6 +702,26 @@ export default function ReportModal({
               </div>
             )}
 
+            {/* Jira Issue */}
+            {report.jiraIssueUrl && (
+              <div className="col-span-4">
+                <label className="mb-2 block text-xs text-white/40">Jira Issue</label>
+                <a
+                  href={report.jiraIssueUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5 hover:border-white/20 transition-colors group"
+                >
+                  <svg className="h-4 w-4 shrink-0 text-[#0052CC] group-hover:opacity-80" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.53 2.001a.75.75 0 0 0-.55.22L2.22 10.98a.75.75 0 0 0 0 1.06l3.4 3.4 5.91-5.91 5.91 5.91 3.4-3.4a.75.75 0 0 0 0-1.06L12.08 2.22a.75.75 0 0 0-.55-.22zm.55 9.94-5.91 5.91 3.4 3.4a.75.75 0 0 0 1.06 0l3.36-3.36z"/>
+                  </svg>
+                  <span className="text-sm text-white/70 group-hover:text-white/90">
+                    {report.jiraIssueKey} — View on Jira
+                  </span>
+                </a>
+              </div>
+            )}
+
             {/* Console Logs — redacted errors/warnings captured at report time */}
             {report.consoleLogs && report.consoleLogs.length > 0 && (
               <div className="col-span-4">

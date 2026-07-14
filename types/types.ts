@@ -39,6 +39,8 @@ export type Report = {
     videoPath?: string;
     githubIssueNumber?: number;
     githubIssueUrl?: string;
+    jiraIssueKey?: string;
+    jiraIssueUrl?: string;
 };
 
 export type Comment = {
