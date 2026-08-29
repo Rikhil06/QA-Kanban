@@ -32,6 +32,7 @@ export type Report = {
     dueDate?: string;
     browser?: string;
     os?: string;
+    device?: string;
     screenSize?: string;
     viewport?: string;
     cssPath?: string;
