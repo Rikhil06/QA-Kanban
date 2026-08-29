@@ -33,6 +33,7 @@ export type Report = {
     browser?: string;
     os?: string;
     device?: string;
+  environment?: string;
     screenSize?: string;
     viewport?: string;
     cssPath?: string;

@@ -27,6 +27,7 @@ import {
   Layout,
   Link2,
   Terminal,
+  Layers,
 } from 'lucide-react';
 import { AnnotureLoader } from '@/components/AnnotureLoader';
 import {
@@ -657,6 +658,17 @@ export default function ReportModal({
                 <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
                   <Smartphone className="h-4 w-4 text-white/40" />
                   <span className="text-sm text-white/80">{report.device}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Environment */}
+            {report.environment && (
+              <div>
+                <label className="mb-2 block text-xs text-white/40">Environment</label>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-[#222] px-3 py-1.5">
+                  <Layers className="h-4 w-4 text-white/40" />
+                  <span className="text-sm text-white/80">{report.environment}</span>
                 </div>
               </div>
             )}
