@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { useUser } from '@/context/UserContext';
+import posthog from 'posthog-js';
 
 const PASSWORD_RULES = [
   { label: 'At least 8 characters',       test: (p: string) => p.length >= 8 },
@@ -111,6 +112,9 @@ function RegisterContent() {
 
       setToken(data.token);
       await refreshUser();
+
+      posthog.identify(data.user.id, { email: data.user.email, name });
+      posthog.capture('user_signed_up', { email: data.user.email });
 
       if (redirectTo) {
         const safePath = redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';

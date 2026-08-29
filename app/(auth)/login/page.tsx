@@ -7,6 +7,7 @@ import { useUser } from '@/context/UserContext';
 import { Loader2 } from 'lucide-react';
 import { SocialLoginButtons } from '@/components/authentication/SocialLoginButtons';
 import Link from 'next/link';
+import posthog from 'posthog-js';
 
 export default function LoginPage() {
   return (
@@ -52,6 +53,8 @@ function LoginContent() {
     if (res.ok) {
       setToken(data.token);
       await refreshUser();
+      posthog.identify(data.user.id, { email: data.user.email });
+      posthog.capture('user_logged_in');
       const pendingInvite = typeof window !== 'undefined' ? sessionStorage.getItem('invite_code') : null;
       if (pendingInvite) {
         router.push(`/invite/${pendingInvite}`);
