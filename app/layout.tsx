@@ -2,7 +2,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 import { ReactQueryProvider } from "./providers/ReactQueryProvider";
+import { PostHogProvider } from "./providers/PostHogProvider";
+import { PostHogPageView } from "./providers/PostHogPageView";
 import { Analytics } from "@vercel/analytics/next";
+import { Suspense } from "react";
 
 const APP_URL = "https://app.annoture.com";
 const OG_TITLE = "Annoture - Visual QA & Bug Reporting for Teams";
@@ -60,9 +63,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#121212]`}>
-        <ReactQueryProvider>
-          {children}
-        </ReactQueryProvider>
+        <PostHogProvider>
+          <ReactQueryProvider>
+            <Suspense>
+              <PostHogPageView />
+            </Suspense>
+            {children}
+          </ReactQueryProvider>
+        </PostHogProvider>
         <Analytics />
       </body>
     </html>
