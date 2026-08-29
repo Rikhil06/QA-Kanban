@@ -19,6 +19,8 @@ const cspValue = [
     'https://*.sentry.io',
     'https://o*.ingest.sentry.io',
     'https://vitals.vercel-insights.com',
+    'https://us.i.posthog.com',
+    'https://us-assets.i.posthog.com',
     isDev ? 'http://localhost:* ws://localhost:*' : '',
   ].filter(Boolean).join(' '),
   "media-src 'self' https:",
