@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Site } from '@/types/types';
-import { ExternalLink, MoreVertical, Kanban, List, Camera, Settings, Archive, Pin, Trash2 } from 'lucide-react';
+import { ExternalLink, MoreVertical, Kanban, List, Settings, Archive, Pin, Trash2 } from 'lucide-react';
 import { Capitalize, getInitials, timeAgo } from '@/utils/helpers';
 import slugify from 'slugify';
 import Link from 'next/link';
@@ -179,8 +179,7 @@ export default function SiteList({ site, toggleSiteArchive, pinSite, unpinSite, 
               <QuickAction icon={Pin} label={site.isPinned ? 'Unpin Site' : 'Pin Site'} onClick={site.isPinned ? handleUnpinSite : handlePinSite} />
               <QuickAction icon={Kanban} label="Open Kanban Board" link={`reports/${stripTLD(site.slug)}`} />
               <QuickAction icon={List} label="View Issues" link={`my-tasks?site=${site.site}`}/>
-              <QuickAction icon={Camera} label="View Screenshots" />
-              <QuickAction icon={Settings} label="Settings" />
+<QuickAction icon={Settings} label="Settings" link={`reports/${stripTLD(site.slug)}/settings`} />
               <div className="h-px bg-white/8 my-1" />
               <QuickAction icon={Archive} label={site.siteStatus === 'archived' ? 'Unarchive site' : 'Archive Site'} danger onClick={site.siteStatus === 'archived' ? handleUnarchive : handleArchive} />
               {confirmDelete ? (
